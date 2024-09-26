@@ -17,6 +17,7 @@ const dataTypeInput = document.querySelector('#data-type-input');
 const diffDeltaSelect = document.querySelector('#diff-delta-select');
 const loadExampleButton = document.querySelector('#load-example-button');
 const exampleInput = document.querySelector('#example-input');
+const evaluatorSelect = document.querySelector("#evaluator")
 
 window.addEventListener('load', function () {
     document.querySelector('#loading').remove();
@@ -67,8 +68,16 @@ const setEditorValue = (editor, value) => {
     });
 }
 
-const setResultText = (text) => {
-    resultPanel.innerHTML = `<small>${text}</small>`
+const setResultText = (text, pre = false) => {
+    let escaped = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+    let value  = pre ? `<pre>${escaped}</pre>` : escaped
+    resultPanel.innerHTML = `<div class="text">${value}</div>`
 }
 
 const loadOTLPExample = () => {
@@ -83,6 +92,7 @@ const runStatements = (event) => {
     let config = configInput.state.doc.toString()
     let type = dataTypeInput.value || "logs"
     let input = otlpDataInput.state.doc.toString()
+    let evaluator = evaluatorSelect.value || "transform_processor"
 
     try {
         JSON.parse(input)
@@ -91,7 +101,7 @@ const runStatements = (event) => {
         return
     }
 
-    let result = executeStatements(config, type, input,)
+    let result = executeStatements(config, type, input, evaluator)
     if (result?.hasOwnProperty("error")) {
         console.error("Go error: ", result)
         setResultText(`Error executing statements: ${result.error}`);
@@ -103,14 +113,34 @@ const runStatements = (event) => {
         result: result,
     }
 
-    performResultDiff(input, result);
+    setResult(input, result);
 }
 
-const performResultDiff = (leftContent, rightContent) => {
-    let left = JSON.parse(leftContent);
-    let right = JSON.parse(rightContent);
+const setLogResult = (result) => {
+    resultPanel.innerHTML = "";
+    let editor = new EditorView({
+        extensions: [
+            basicSetup,
+            EditorView.editable.of(false),
+            json(),
+        ],
+        parent: resultPanel,
+    });
 
+    setEditorValue(editor, result.logs);
+}
+
+const setJsonResult = (input, result) => {
+    if (!result.value) {
+        setResultText("empty result value")
+        return;
+    }
+
+    let left = JSON.parse(input);
+    let right = JSON.parse(result.value);
     let selectedDelta = diffDeltaSelect.value;
+
+    // Plain JSON result
     if (selectedDelta === "json") {
         resultPanel.innerHTML = "";
         let editor = new EditorView({
@@ -122,47 +152,59 @@ const performResultDiff = (leftContent, rightContent) => {
             ],
             parent: resultPanel,
         });
-
         setEditorValue(editor, JSON.stringify(right, null, 2));
         return
     }
 
+    // Comparable JSON results
     const delta = jsondiffpatch.diff(left, right);
-    // No changes
     if (!delta) {
-        setResultText('<i>&nbsp;No changes</i>');
+        setResultText('No changes');
         return;
     }
 
-    if (selectedDelta === "annotated_json") {
-        resultPanel.innerHTML = annotatedFormatter.format(
-            delta,
-            left,
-        );
-        return;
+    let formatter = selectedDelta === "annotated_json"
+        ? annotatedFormatter
+        : htmlFormatter;
+
+    if (formatter.showUnchanged && formatter.hideUnchanged) {
+        if (showUnchangedInput.checked) {
+            formatter.showUnchanged();
+        } else {
+            formatter.hideUnchanged();
+        }
     }
 
-    // Visual
-    if (showUnchangedInput.checked) {
-        htmlFormatter.showUnchanged();
-    } else {
-        htmlFormatter.hideUnchanged();
-    }
-
-    resultPanel.innerHTML = htmlFormatter.format(
+    resultPanel.innerHTML = formatter.format(
         delta,
         left,
     );
 }
 
+const setResult = (input, result) => {
+    if (diffDeltaSelect.value === "logs") {
+        setLogResult(result);
+        return;
+    }
+
+    setJsonResult(input, result);
+}
+
 const loadConfigExamples = () => {
-    for (let i = 0; i < CONFIG_EXAMPLES.length; i++) {
-        let example = CONFIG_EXAMPLES[i];
+    let examples = CONFIG_EXAMPLES[evaluatorSelect.value]
+    while (exampleInput.children.length > 1) {
+        exampleInput.children[exampleInput.children.length - 1].remove();
+    }
+
+    for (let i = 0; i < examples.length; i++) {
+        let example = examples[i];
         let opt = document.createElement('option');
         opt.value = i.toString();
         opt.innerHTML = example.name;
         exampleInput.appendChild(opt);
     }
+
+    exampleInput.value = "";
 }
 
 const showUnchangedInputChanged = function (event) {
@@ -179,12 +221,12 @@ const selectedDeltaChanged = (event) => {
     showUnchangedInput.checked = false;
     let data = window.lastRunData;
     if (data) {
-        performResultDiff(data.input, data.result);
+        setResult(data.input, data.result);
     }
 }
 
 const selectedExampleChanged = (event) => {
-    let example = CONFIG_EXAMPLES[parseInt(event.target.value)]
+    let example = CONFIG_EXAMPLES[evaluatorSelect.value][parseInt(event.target.value)]
     if (example) {
         setEditorValue(configInput, example.config);
         dataTypeInput.value = example.otlp_type;
@@ -197,7 +239,9 @@ runButton.addEventListener('click', runStatements)
 showUnchangedInput.addEventListener('change', showUnchangedInputChanged);
 diffDeltaSelect.addEventListener('change', selectedDeltaChanged);
 exampleInput.addEventListener('change', selectedExampleChanged);
-loadExampleButton.addEventListener('click', (e) => loadOTLPExample());
+loadExampleButton.addEventListener('click', () => loadOTLPExample());
+evaluatorSelect.addEventListener('change', () => loadConfigExamples())
 
 setEditorValue(otlpDataInput, "{}")
+
 loadConfigExamples();

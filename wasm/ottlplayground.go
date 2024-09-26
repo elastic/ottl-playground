@@ -7,46 +7,91 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"syscall/js"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
-func newError(message string, args ...interface{}) map[string]any {
-	return map[string]any{
-		"error": fmt.Sprintf(message, args...),
+var (
+	defaultLogEncoder = zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+)
+
+func newResult(json string, error string, logs string) map[string]any {
+	v := map[string]any{
+		"value": json,
+		"logs":  logs,
 	}
+	if error != "" {
+		v["error"] = error
+	}
+	return v
+}
+
+func newErrorResult(err string, logs string) map[string]any {
+	return newResult("", err, logs)
+}
+
+func takeObservedLogs(executor internal.Executor) string {
+	all := executor.ObservedLogs().TakeAll()
+	var s strings.Builder
+	for _, entry := range all {
+		v, err := defaultLogEncoder.EncodeEntry(entry.Entry, entry.Context)
+		if err == nil {
+			s.Write(v.Bytes())
+		}
+	}
+	return s.String()
 }
 
 func executeStatementsWrapper() js.Func {
-	executor := internal.NewTransformProcessorExecutor()
+	executors := map[string]internal.Executor{
+		"transform_processor": internal.NewTransformProcessorExecutor(),
+		"filter_processor":    internal.NewFilterProcessorExecutor(),
+	}
+
 	executeStatementsFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		if len(args) != 3 {
-			return newError("Invalid number of arguments passed")
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Println("recovered from", r)
+			}
+		}()
+
+		if len(args) != 4 {
+			return newErrorResult("invalid number of arguments", "")
 		}
 
 		config := args[0].String()
 		dataType := args[1].String()
 		payload := args[2].String()
+		executorName := args[3].String()
+
+		executor, ok := executors[executorName]
+		if !ok {
+			return newErrorResult(fmt.Sprintf("unsupported evaluator %s", executorName), "")
+		}
 
 		var output []byte
 		var err error
 		switch dataType {
 		case "logs":
 			output, err = executor.ExecuteLogStatements(config, payload)
-		case "trace":
+		case "traces":
 			output, err = executor.ExecuteTraceStatements(config, payload)
 		case "metrics":
 			output, err = executor.ExecuteMetricStatements(config, payload)
 		default:
-			return newError("unsupported OTLP data type %s", dataType)
+			return newErrorResult(fmt.Sprintf("unsupported OTLP data type %s", dataType), "")
 		}
 
 		if err != nil {
-			return newError("Unable to run %s statements. Error %w", dataType, err)
+			return newErrorResult(fmt.Sprintf("unable to run %s statements. Error %w", dataType, err), takeObservedLogs(executor))
 		}
 
-		return string(output)
+		return newResult(string(output), "", takeObservedLogs(executor))
 	})
 
 	return executeStatementsFunc

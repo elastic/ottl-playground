@@ -14,33 +14,39 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest/observer"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 )
 
-type transformProcessorExecutor struct {
+type processorExecutor[T any] struct {
 	factory           processor.Factory
 	settings          processor.Settings
 	telemetrySettings component.TelemetrySettings
 	errorMode         ottl.ErrorMode
+	observedLogs      *observer.ObservedLogs
 }
 
-func NewTransformProcessorExecutor() Executor {
+func newProcessorExecutor[C any](factory processor.Factory) *processorExecutor[C] {
 	telemetrySettings := componenttest.NewNopTelemetrySettings()
+	core, observedLogs := observer.New(zap.DebugLevel)
+	telemetrySettings.Logger = zap.New(core)
+
 	settings := processor.Settings{
 		ID:                component.MustNewID("ottl_playground"),
 		TelemetrySettings: telemetrySettings,
 	}
 
-	return &transformProcessorExecutor{
-		factory:           transformprocessor.NewFactory(),
+	return &processorExecutor[C]{
+		factory:           factory,
 		telemetrySettings: telemetrySettings,
 		settings:          settings,
+		observedLogs:      observedLogs,
 	}
 }
 
-func (p *transformProcessorExecutor) parseConfig(yamlConfig string) (*transformprocessor.Config, error) {
+func (p *processorExecutor[C]) parseConfig(yamlConfig string) (*C, error) {
 	deserializedYaml, err := confmap.NewRetrievedFromYAML([]byte(yamlConfig))
 	if err != nil {
 		return nil, err
@@ -51,7 +57,7 @@ func (p *transformProcessorExecutor) parseConfig(yamlConfig string) (*transformp
 		return nil, err
 	}
 
-	defaultConfig := p.factory.CreateDefaultConfig().(*transformprocessor.Config)
+	defaultConfig := p.factory.CreateDefaultConfig().(*C)
 	err = yamlConfigMap.Unmarshal(&defaultConfig)
 	if err != nil {
 		return nil, err
@@ -60,13 +66,13 @@ func (p *transformProcessorExecutor) parseConfig(yamlConfig string) (*transformp
 	return defaultConfig, nil
 }
 
-func (p *transformProcessorExecutor) ExecuteLogStatements(yamlConfig, input string) ([]byte, error) {
+func (p *processorExecutor[C]) ExecuteLogStatements(yamlConfig, input string) ([]byte, error) {
 	config, err := p.parseConfig(yamlConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	var transformedLogs plog.Logs
+	transformedLogs := plog.NewLogs()
 	logsConsumer, _ := consumer.NewLogs(func(ctx context.Context, ld plog.Logs) error {
 		transformedLogs = ld
 		return nil
@@ -97,13 +103,13 @@ func (p *transformProcessorExecutor) ExecuteLogStatements(yamlConfig, input stri
 	return json, nil
 }
 
-func (p *transformProcessorExecutor) ExecuteTraceStatements(yamlConfig, input string) ([]byte, error) {
+func (p *processorExecutor[C]) ExecuteTraceStatements(yamlConfig, input string) ([]byte, error) {
 	config, err := p.parseConfig(yamlConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	var transformedTraces ptrace.Traces
+	transformedTraces := ptrace.NewTraces()
 	tracesConsumer, _ := consumer.NewTraces(func(ctx context.Context, ld ptrace.Traces) error {
 		transformedTraces = ld
 		return nil
@@ -115,12 +121,12 @@ func (p *transformProcessorExecutor) ExecuteTraceStatements(yamlConfig, input st
 	}
 
 	tracesUnmarshaler := &ptrace.JSONUnmarshaler{}
-	inputLogs, err := tracesUnmarshaler.UnmarshalTraces([]byte(input))
+	inputTraces, err := tracesUnmarshaler.UnmarshalTraces([]byte(input))
 	if err != nil {
 		return nil, err
 	}
 
-	err = tracesProcessor.ConsumeTraces(context.Background(), inputLogs)
+	err = tracesProcessor.ConsumeTraces(context.Background(), inputTraces)
 	if err != nil {
 		return nil, err
 	}
@@ -134,13 +140,13 @@ func (p *transformProcessorExecutor) ExecuteTraceStatements(yamlConfig, input st
 	return json, nil
 }
 
-func (p *transformProcessorExecutor) ExecuteMetricStatements(yamlConfig, input string) ([]byte, error) {
+func (p *processorExecutor[C]) ExecuteMetricStatements(yamlConfig, input string) ([]byte, error) {
 	config, err := p.parseConfig(yamlConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	var transformedMetrics pmetric.Metrics
+	transformedMetrics := pmetric.NewMetrics()
 	metricsConsumer, _ := consumer.NewMetrics(func(ctx context.Context, ld pmetric.Metrics) error {
 		transformedMetrics = ld
 		return nil
@@ -152,12 +158,12 @@ func (p *transformProcessorExecutor) ExecuteMetricStatements(yamlConfig, input s
 	}
 
 	tracesUnmarshaler := &pmetric.JSONUnmarshaler{}
-	inputLogs, err := tracesUnmarshaler.UnmarshalMetrics([]byte(input))
+	inputMetrics, err := tracesUnmarshaler.UnmarshalMetrics([]byte(input))
 	if err != nil {
 		return nil, err
 	}
 
-	err = metricsProcessor.ConsumeMetrics(context.Background(), inputLogs)
+	err = metricsProcessor.ConsumeMetrics(context.Background(), inputMetrics)
 	if err != nil {
 		return nil, err
 	}
@@ -169,4 +175,8 @@ func (p *transformProcessorExecutor) ExecuteMetricStatements(yamlConfig, input s
 	}
 
 	return json, nil
+}
+
+func (p *processorExecutor[C]) ObservedLogs() *observer.ObservedLogs {
+	return p.observedLogs
 }

@@ -109,9 +109,14 @@ body, html {
 
 .result-panel-content {
     overflow: auto;
-    height: calc(100% - 76px);
+    height: calc(100% - 77px);
     border: #eee 1px solid;
     padding-top: 2px;
+}
+
+.result-panel-content .text {
+    font-size: smaller;
+    margin-left: 4px;
 }
 
 .result-panel-delta {

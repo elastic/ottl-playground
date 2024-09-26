@@ -38,6 +38,7 @@
             <div>
                 <select class="evaluator-select" id="evaluator" name="evaluator">
                     <option selected value="transform_processor">Transform processor
+                    <option value="filter_processor">Filter processor
                     </option>
                 </select>
             </div>
@@ -83,11 +84,11 @@
                 <div class="code-panel-parent" id="input-config-panel">
                     <div class="code-panel-controls">
                         <div>
-                            <span><strong>Transform Statements</strong> <sup><small>YAML</small></sup></span>
+                            <span><strong>Configuration</strong> <sup><small>YAML</small></sup></span>
                         </div>
                         <div class="right">
                             <select id="example-input">
-                                <option selected value="">Example</option>
+                                <option selected disabled value="">Example</option>
                             </select>
                         </div>
                     </div>
@@ -103,7 +104,7 @@
                         <div class="right" style="display: flex">
                             <select id="data-type-input">
                                 <option selected value="logs">Logs</option>
-                                <option value="trace">Trace</option>
+                                <option value="traces">Traces</option>
                                 <option value="metrics">Metrics</option>
                             </select>
                             <button id="load-example-button"
@@ -136,6 +137,7 @@
                                 <option value="visual">Visual</option>
                                 <option value="json">JSON</option>
                                 <option value="annotated_json">Annotated JSON</option>
+                                <option value="logs">Execution Logs</option>
                             </select>
                         </div>
                         <div id="show-unchanged-group"
