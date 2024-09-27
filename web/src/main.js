@@ -88,6 +88,12 @@ const loadOTLPExample = () => {
     setEditorValue(otlpDataInput, JSON.stringify(JSON.parse(PAYLOAD_EXAMPLES[type]), null, 2));
 }
 
+const setResultError = (message) => {
+    delete window.lastRunData;
+    diffDeltaSelect.value = "visual";
+    setResultText(`Error executing statements: ${message}`);
+}
+
 const runStatements = (event) => {
     let config = configInput.state.doc.toString()
     let type = dataTypeInput.value || "logs"
@@ -97,14 +103,14 @@ const runStatements = (event) => {
     try {
         JSON.parse(input)
     } catch (e) {
-        setResultText(`Invalid OTLP JSON payload: ${e}`)
+        setResultError(`Invalid OTLP JSON payload: ${e}`);
         return
     }
 
     let result = executeStatements(config, type, input, evaluator)
     if (result?.hasOwnProperty("error")) {
+        setResultError(result.error);
         console.error("Go error: ", result)
-        setResultText(`Error executing statements: ${result.error}`);
         return;
     }
 
@@ -132,7 +138,7 @@ const setLogResult = (result) => {
 
 const setJsonResult = (input, result) => {
     if (!result.value) {
-        setResultText("empty result value")
+        setResultError("Empty result value");
         return;
     }
 
