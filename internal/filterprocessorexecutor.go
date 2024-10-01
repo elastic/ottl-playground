@@ -11,6 +11,8 @@ type filterProcessorExecutor struct {
 	*processorExecutor[filterprocessor.Config]
 }
 
+// NewFilterProcessorExecutor creates an internal.Executor that runs OTTL statements using
+// the [filterprocessor].
 func NewFilterProcessorExecutor() Executor {
 	executor := newProcessorExecutor[filterprocessor.Config](filterprocessor.NewFactory())
 	return &filterProcessorExecutor{executor}

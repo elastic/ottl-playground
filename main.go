@@ -5,17 +5,27 @@ package main
 
 import (
 	"compress/gzip"
-	"fmt"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/NYTimes/gziphandler"
 )
 
 func main() {
-	wrapper, err := gziphandler.NewGzipLevelHandler(gzip.BestCompression)
-	err = http.ListenAndServe(":9090", wrapper(http.FileServer(http.Dir("web/public"))))
+	gzipHandler, err := gziphandler.NewGzipLevelHandler(gzip.BestCompression)
 	if err != nil {
-		fmt.Println("Failed to start server", err)
-		return
+		log.Fatal(err)
+	}
+
+	server := &http.Server{
+		Addr:              ":9090",
+		ReadHeaderTimeout: 20 * time.Second,
+		Handler:           gzipHandler(http.FileServer(http.Dir("web/public"))),
+	}
+
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatal(err)
 	}
 }

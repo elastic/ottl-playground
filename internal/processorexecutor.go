@@ -16,15 +16,12 @@ import (
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl"
 )
 
 type processorExecutor[T any] struct {
 	factory           processor.Factory
 	settings          processor.Settings
 	telemetrySettings component.TelemetrySettings
-	errorMode         ottl.ErrorMode
 	observedLogs      *observer.ObservedLogs
 }
 
@@ -73,7 +70,7 @@ func (p *processorExecutor[C]) ExecuteLogStatements(yamlConfig, input string) ([
 	}
 
 	transformedLogs := plog.NewLogs()
-	logsConsumer, _ := consumer.NewLogs(func(ctx context.Context, ld plog.Logs) error {
+	logsConsumer, _ := consumer.NewLogs(func(_ context.Context, ld plog.Logs) error {
 		transformedLogs = ld
 		return nil
 	})
@@ -110,7 +107,7 @@ func (p *processorExecutor[C]) ExecuteTraceStatements(yamlConfig, input string) 
 	}
 
 	transformedTraces := ptrace.NewTraces()
-	tracesConsumer, _ := consumer.NewTraces(func(ctx context.Context, ld ptrace.Traces) error {
+	tracesConsumer, _ := consumer.NewTraces(func(_ context.Context, ld ptrace.Traces) error {
 		transformedTraces = ld
 		return nil
 	})
@@ -147,7 +144,7 @@ func (p *processorExecutor[C]) ExecuteMetricStatements(yamlConfig, input string)
 	}
 
 	transformedMetrics := pmetric.NewMetrics()
-	metricsConsumer, _ := consumer.NewMetrics(func(ctx context.Context, ld pmetric.Metrics) error {
+	metricsConsumer, _ := consumer.NewMetrics(func(_ context.Context, ld pmetric.Metrics) error {
 		transformedMetrics = ld
 		return nil
 	})
