@@ -1,0 +1,68 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "my.service"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {
+            "name": "my.library",
+            "version": "1.0.0",
+            "attributes": [
+              {
+                "key": "my.scope.attribute",
+                "value": {
+                  "stringValue": "some scope attribute"
+                }
+              }
+            ]
+          },
+          "spans": [
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "eee19b7ec3c1b174",
+              "parentSpanId": "eee19b7ec3c1b173",
+              "name": "I'm a server span",
+              "startTimeUnixNano": "1544712660000000000",
+              "endTimeUnixNano": "1544712661000000000",
+              "kind": 2,
+              "attributes": [
+                {
+                  "key": "my.span.attr",
+                  "value": {
+                    "stringValue": "some value"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "eee19b7ec3c1b173",
+              "parentSpanId": "eee19b7ec3c1b173",
+              "name": "Me too",
+              "startTimeUnixNano": "1544712660000000000",
+              "endTimeUnixNano": "1544712661000000000",
+              "kind": 1,
+              "attributes": [
+                {
+                  "key": "my.span.attr",
+                  "value": {
+                    "stringValue": "some value"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
