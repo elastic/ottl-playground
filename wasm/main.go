@@ -7,13 +7,14 @@ package main
 
 import (
 	"fmt"
+
 	"syscall/js"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/wasm/internal"
 )
 
 func executeStatementsWrapper() js.Func {
-	executeStatementsFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	return js.FuncOf(func(_ js.Value, args []js.Value) any {
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Println("recovered from", r)
@@ -30,8 +31,6 @@ func executeStatementsWrapper() js.Func {
 		executorName := args[3].String()
 		return internal.ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName)
 	})
-
-	return executeStatementsFunc
 }
 
 func main() {

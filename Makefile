@@ -26,3 +26,17 @@ build-web:
 
 .PHONY: build
 build: build-web build-wasm
+
+.PHONY: fmt
+fmt: fmt-all
+
+.PHONY: fmt-all
+fmt-all:
+	GOARCH=wasm GOOS=js make -f ../../Makefile.Common fmt
+
+.PHONY: lint
+lint: lint-all
+
+.PHONY: lint-all
+lint-all:
+	GOARCH=wasm GOOS=js make -f ../../Makefile.Common lint
