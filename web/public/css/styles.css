@@ -41,7 +41,7 @@ body, html {
 }
 
 .split-vertical {
-    height: calc(100% - 24px)
+    height: 100%;
 }
 
 .gutter {
@@ -67,7 +67,7 @@ body, html {
 
 .code-editor-container {
     display: flex;
-    height: calc(100% - 55px);
+    height: 100%;
     overflow: auto;
 }
 
@@ -132,11 +132,12 @@ body, html {
 }
 
 .code-panel-controls {
-    overflow: hidden;
     flex-wrap: nowrap;
     border-left: #f5a800 4px solid;
     border-top: #eee 1px solid;
     border-bottom: #eee 1px solid;
+    width: 99%;
+    overflow-x: clip;
 }
 
 .code-panel-controls div {
@@ -145,6 +146,11 @@ body, html {
     margin: 10px 5px 10px 5px;
     text-decoration: none;
     font-size: 17px;
+}
+
+.code-panel-controls-header {
+    width: 50%;
+    overflow: hidden;
 }
 
 .code-panel-controls div.right {
@@ -161,9 +167,19 @@ body, html {
     height: 100%;
 }
 
+.w-full {
+    width: 100%;
+}
+
 .full-size {
     height: 100%;
     width: 100%
+}
+
+.content-frame {
+    height: 100%;
+    width: 100%;
+    overflow: hidden
 }
 
 .playground {
@@ -249,15 +265,10 @@ label {
 
 input[type=text], select, textarea {
     width: 100%;
-    min-width: 100px;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
     resize: vertical;
-}
-
-.evaluator-select {
-    /*padding: 10px;*/
 }
 
 .delta-select {
@@ -269,6 +280,10 @@ input[type=text], select, textarea {
     height: 100%;
     padding-top: 25px;
     text-align: center;
+}
+
+.hidden-overflow {
+    overflow: hidden;
 }
 
 /*Codemirror*/
