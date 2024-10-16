@@ -1,23 +1,6 @@
-import {CONFIG_EXAMPLES, PAYLOAD_EXAMPLES} from "./examples";
-import Split from 'split.js'
-import {basicSetup, EditorView} from "codemirror"
-import {json, jsonParseLinter} from "@codemirror/lang-json"
-import {yaml} from "@codemirror/lang-yaml"
-import {indentWithTab} from "@codemirror/commands"
-import {keymap} from "@codemirror/view"
-import {linter, lintGutter} from '@codemirror/lint'
-import * as jsondiffpatch from 'jsondiffpatch';
-import * as htmlFormatter from 'jsondiffpatch/formatters/html';
-import * as annotatedFormatter from 'jsondiffpatch/formatters/annotated';
-
-const runButton = document.querySelector('#btn-run');
-const resultPanel = document.querySelector('#result-panel');
-const showUnchangedInput = document.querySelector('#show-unchanged-input');
-const dataTypeInput = document.querySelector('#data-type-input');
-const diffDeltaSelect = document.querySelector('#diff-delta-select');
-const loadExampleButton = document.querySelector('#load-example-button');
-const exampleInput = document.querySelector('#example-input');
-const evaluatorSelect = document.querySelector("#evaluator")
+import './components/navbar/index.js';
+import './components/controls/index.js';
+import './components/playground.js';
 
 window.addEventListener('load', function () {
     document.querySelector('#loading').remove();

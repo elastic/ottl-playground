@@ -1,0 +1,4 @@
+node_modules/*
+rollup.config.js
+**/wasm_exec.js
+**/bundle.js
