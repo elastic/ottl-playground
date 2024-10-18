@@ -62,7 +62,8 @@ export class PlaygroundConfigPanel extends LitElement {
               <sup
                 ><small
                   >${this.configDocsURL
-                    ? html`<a target="_blank" href="${this.configDocsURL}">YAML</a
+                    ? html`<a target="_blank" href="${this.configDocsURL}"
+                        >YAML</a
                       >`
                     : 'YAML'}</small
                 ></sup
