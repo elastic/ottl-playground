@@ -134,7 +134,7 @@ export class PlaygroundControls extends LitElement {
           ${this.hideRunButton
             ? nothing
             : html`
-                <div title="⌃+R">
+                <div>
                   <button
                     class="run-button"
                     ?disabled="${this.loading}"
@@ -149,7 +149,15 @@ export class PlaygroundControls extends LitElement {
                               <svg height="8px" id="Layer_1" style="enable-background: new 0 0 30 30;" viewBox="0 0 18 10" width="10px" x="0px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><rect fill="#fff" height="20" width="4" x="0" y="0"><animate attributeName="opacity" attributeType="XML" begin="0s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect><rect fill="#fff" height="20" width="4" x="7" y="0"><animate attributeName="opacity" attributeType="XML" begin="0.2s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect><rect fill="#fff" height="20" width="4" x="14" y="0"><animate attributeName="opacity" attributeType="XML" begin="0.4s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect></svg>
                             </span>
                           `
-                        : 'Run ►'}
+                        : html`
+                            <span class="tooltip"
+                              >Run ►
+                              <span
+                                class="tooltip-text tooltip-text-position-bottom"
+                                >⌃+R</span
+                              >
+                            </span>
+                          `}
                     </span>
                   </button>
                 </div>
