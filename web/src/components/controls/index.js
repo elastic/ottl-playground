@@ -1,28 +1,40 @@
 import {css, html, LitElement} from 'lit-element';
 import {globalStyles} from '../../styles.js';
+import {repeat} from 'lit/directives/repeat.js';
 import {nothing} from 'lit';
 
 export class PlaygroundControls extends LitElement {
   static properties = {
-    // attributes
-    title: {type: String, attribute: true},
-    evaluator: {type: String, attribute: true, reflect: true},
-    hideEvaluator: {type: Boolean, attribute: 'hide-evaluator'},
+    title: {type: String},
+    evaluator: {type: String},
+    evaluators: {type: Object},
+    hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
-    // states
-    _loading: {type: Boolean, state: true},
+    loading: {type: Boolean},
   };
 
   constructor() {
     super();
     this.title = 'OTTL Playground';
-    this._loading = true;
-    this._addEventListeners();
+    this.hideEvaluators = false;
+    this.hideRunButton = false;
+    this.loading = false;
+    this.evaluator = 'transform_processor';
+
+    this.evaluators = [
+      {id: 'transform_processor', name: 'Transform processor'},
+      {id: 'filter_processor', name: 'Filter processor'},
+    ];
+
+    window.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key.toUpperCase() === 'R') {
+        this._notifyRunRequested();
+      }
+    });
   }
 
   static get styles() {
     return [
-      globalStyles,
       css`
         .playground-controls {
           overflow: hidden;
@@ -58,6 +70,7 @@ export class PlaygroundControls extends LitElement {
           border: none;
           color: white;
           padding: 10px;
+          width: 70px;
           text-align: center;
           text-decoration: none;
           display: inline-block;
@@ -69,21 +82,17 @@ export class PlaygroundControls extends LitElement {
         .run-button:hover {
           background-color: #3e8e41;
         }
-      `,
-    ];
-  }
 
-  get selectedEvaluator() {
-    return this.shadowRoot.querySelector('#evaluator').value;
+        #evaluator {
+          width: 160px;
+        }
+      `,
+      globalStyles,
+    ];
   }
 
   render() {
     return html`
-      <style>
-        ${this.hideEvaluator === true
-          ? '.evaluator-container { visibility: hidden; }'
-          : nothing}
-      </style>
       <div class="playground-controls">
         <slot name="app-title">
           <div class="app-title">
@@ -93,137 +102,77 @@ export class PlaygroundControls extends LitElement {
           </div>
         </slot>
         <div class="right">
-          ${this.hideEvaluator !== true
-            ? html`
+          ${this.hideEvaluators
+            ? nothing
+            : html`
                 <div class="evaluator-container">
                   <label for="evaluator">Evaluator</label>
                 </div>
                 <div class="evaluator-container">
                   <select
                     id="evaluator"
-                    ?disabled="${this._loading}"
+                    ?disabled="${this.loading}"
                     name="evaluator"
-                    .value=${this.evaluator}
-                    @change="${this._handleEvaluatorChange}"
+                    @change="${this._notifyEvaluatorChanged}"
                   >
-                    <option selected value="transform_processor">
-                      Transform processor
-                    </option>
-                    <option value="filter_processor">Filter processor</option>
+                    ${this.evaluators &&
+                    repeat(
+                      this.evaluators,
+                      (it) => it.id,
+                      (it) => {
+                        return html` <option
+                          ?selected="${it.id === this.evaluator}"
+                          value="${it.id}"
+                        >
+                          ${it.name}
+                        </option>`;
+                      }
+                    )}
                   </select>
                 </div>
-              `
-            : nothing}
-          ${this.hideRunButton !== true
-            ? html`
-                <div>
+              `}
+          ${this.hideRunButton
+            ? nothing
+            : html`
+                <div title="⌃+R">
                   <button
                     class="run-button"
-                    ?disabled="${this._loading}"
+                    ?disabled="${this.loading}"
                     id="btn-run"
-                    @click="${this._notifyRunClick}"
+                    @click="${this._notifyRunRequested}"
                   >
                     <span id="run-btn">
-                      ${this._loading
+                      ${this.loading
                         ? html`
                             <span>
-                              <svg
-                                height="8px"
-                                id="Layer_1"
-                                style="enable-background:new 0 0 30 30;"
-                                viewBox="0 0 18 10"
-                                width="10px"
-                                x="0px"
-                                xml:space="preserve"
-                                xmlns="http://www.w3.org/2000/svg"
-                                y="0px"
-                              >
-                                <rect
-                                  fill="#fff"
-                                  height="20"
-                                  width="4"
-                                  x="0"
-                                  y="0"
-                                >
-                                  <animate
-                                    attributeName="opacity"
-                                    attributeType="XML"
-                                    begin="0s"
-                                    dur="0.6s"
-                                    repeatCount="indefinite"
-                                    values="1; .2; 1"
-                                  ></animate>
-                                </rect>
-                                <rect
-                                  fill="#fff"
-                                  height="20"
-                                  width="4"
-                                  x="7"
-                                  y="0"
-                                >
-                                  <animate
-                                    attributeName="opacity"
-                                    attributeType="XML"
-                                    begin="0.2s"
-                                    dur="0.6s"
-                                    repeatCount="indefinite"
-                                    values="1; .2; 1"
-                                  ></animate>
-                                </rect>
-                                <rect
-                                  fill="#fff"
-                                  height="20"
-                                  width="4"
-                                  x="14"
-                                  y="0"
-                                >
-                                  <animate
-                                    attributeName="opacity"
-                                    attributeType="XML"
-                                    begin="0.4s"
-                                    dur="0.6s"
-                                    repeatCount="indefinite"
-                                    values="1; .2; 1"
-                                  ></animate>
-                                </rect>
-                              </svg>
+                              <!-- prettier-ignore -->
+                              <svg height="8px" id="Layer_1" style="enable-background: new 0 0 30 30;" viewBox="0 0 18 10" width="10px" x="0px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><rect fill="#fff" height="20" width="4" x="0" y="0"><animate attributeName="opacity" attributeType="XML" begin="0s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect><rect fill="#fff" height="20" width="4" x="7" y="0"><animate attributeName="opacity" attributeType="XML" begin="0.2s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect><rect fill="#fff" height="20" width="4" x="14" y="0"><animate attributeName="opacity" attributeType="XML" begin="0.4s" dur="0.6s" repeatCount="indefinite" values="1; .2; 1"></animate></rect></svg>
                             </span>
                           `
                         : 'Run ►'}
                     </span>
                   </button>
                 </div>
-              `
-            : nothing}
+              `}
           <slot name="custom-components"></slot>
         </div>
       </div>
     `;
   }
 
-  _notifyRunClick() {
+  _notifyRunRequested() {
     this.dispatchEvent(
-      new Event('playground-run', {bubbles: true, composed: true})
+      new Event('playground-run-requested', {bubbles: true, composed: true})
     );
   }
 
-  _addEventListeners() {
-    let that = this;
-    window.addEventListener('playground-wasm-ready', function () {
-      that._loading = false;
-    });
-
-    window.addEventListener('playground-evaluator-change', (e) => {
-      this.evaluator = e.detail.value;
-    });
-  }
-
-  _handleEvaluatorChange(e) {
-    const event = new CustomEvent('playground-evaluator-change', {
-      detail: {value: e.target.value},
+  _notifyEvaluatorChanged(e) {
+    const event = new CustomEvent('evaluator-changed', {
+      detail: {
+        value: e.target.value,
+      },
       bubbles: true,
       composed: true,
-      cancelable: true,
     });
     this.dispatchEvent(event);
   }

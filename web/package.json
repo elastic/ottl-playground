@@ -23,7 +23,7 @@
     "lit": "^3.2.1"
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "npm run lint:eslint && npm run lint:lit-analyzer && rollup -c",
     "watch": "rollup -c -w",
     "dev": "npm-run-all --parallel start watch",
     "start": "serve public",

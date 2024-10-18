@@ -13,13 +13,37 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
+type statementExecutor struct {
+	id       string
+	name     string
+	helpLink string
+	internal.Executor
+}
+
 var (
-	defaultLogEncoder   = zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
-	statementsExecutors = map[string]internal.Executor{
-		"transform_processor": internal.NewTransformProcessorExecutor(),
-		"filter_processor":    internal.NewFilterProcessorExecutor(),
+	defaultLogEncoder         = zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	statementsExecutorsLookup = map[string]*statementExecutor{}
+	statementsExecutors       = []statementExecutor{
+		{
+			"transform_processor",
+			"Transform processor",
+			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
+			internal.NewTransformProcessorExecutor(),
+		},
+		{
+			"filter_processor",
+			"Filter processor",
+			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor",
+			internal.NewFilterProcessorExecutor(),
+		},
 	}
 )
+
+func init() {
+	for _, executor := range statementsExecutors {
+		statementsExecutorsLookup[executor.id] = &executor
+	}
+}
 
 func newResult(json string, err string, logs string) map[string]any {
 	v := map[string]any{
@@ -49,7 +73,7 @@ func takeObservedLogs(executor internal.Executor) string {
 }
 
 func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName string) map[string]any {
-	executor, ok := statementsExecutors[executorName]
+	executor, ok := statementsExecutorsLookup[executorName]
 	if !ok {
 		return NewErrorResult(fmt.Sprintf("unsupported evaluator %s", executorName), "")
 	}
@@ -72,4 +96,16 @@ func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName strin
 	}
 
 	return newResult(string(output), "", takeObservedLogs(executor))
+}
+
+func StatementsExecutors() []any {
+	var res []any
+	for _, executor := range statementsExecutors {
+		res = append(res, map[string]any{
+			"id":       executor.id,
+			"name":     executor.name,
+			"helpLink": executor.helpLink,
+		})
+	}
+	return res
 }
