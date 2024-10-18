@@ -12,7 +12,7 @@ export class PlaygroundConfigPanel extends LitElement {
     examples: {type: Array},
     hideExamples: {type: Boolean, attribute: 'hide-examples'},
     config: {type: String},
-    configHelpLink: {type: String, attribute: 'config-help-link'},
+    configDocsURL: {type: String, attribute: 'config-docs-url'},
     _editor: {state: true},
   };
 
@@ -20,7 +20,7 @@ export class PlaygroundConfigPanel extends LitElement {
     super();
     this.hideExamples = false;
     this.examples = [];
-    this.configHelpLink = null;
+    this.configDocsURL = null;
   }
 
   static get styles() {
@@ -61,9 +61,8 @@ export class PlaygroundConfigPanel extends LitElement {
               <strong>Configuration</strong>
               <sup
                 ><small
-                  >${this.configHelpLink
-                    ? html`<a target="_blank" href="${this.configHelpLink}"
-                        >YAML</a
+                  >${this.configDocsURL
+                    ? html`<a target="_blank" href="${this.configDocsURL}">YAML</a
                       >`
                     : 'YAML'}</small
                 ></sup

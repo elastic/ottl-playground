@@ -13,35 +13,16 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
-type statementExecutor struct {
-	id       string
-	name     string
-	helpLink string
-	internal.Executor
-}
-
 var (
 	defaultLogEncoder         = zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
-	statementsExecutorsLookup = map[string]*statementExecutor{}
-	statementsExecutors       = []statementExecutor{
-		{
-			"transform_processor",
-			"Transform processor",
-			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
-			internal.NewTransformProcessorExecutor(),
-		},
-		{
-			"filter_processor",
-			"Filter processor",
-			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor",
-			internal.NewFilterProcessorExecutor(),
-		},
-	}
+	statementsExecutors       []internal.Executor
+	statementsExecutorsLookup = map[string]internal.Executor{}
 )
 
 func init() {
+	statementsExecutors = internal.Executors()
 	for _, executor := range statementsExecutors {
-		statementsExecutorsLookup[executor.id] = &executor
+		statementsExecutorsLookup[executor.Metadata().Id] = executor
 	}
 }
 
@@ -101,10 +82,12 @@ func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName strin
 func StatementsExecutors() []any {
 	var res []any
 	for _, executor := range statementsExecutors {
+		meta := executor.Metadata()
 		res = append(res, map[string]any{
-			"id":       executor.id,
-			"name":     executor.name,
-			"helpLink": executor.helpLink,
+			"id":      meta.Id,
+			"name":    meta.Name,
+			"docsURL": meta.DocsURL,
+			"version": meta.Version,
 		})
 	}
 	return res

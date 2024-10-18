@@ -22,7 +22,7 @@ export class Playground extends LitElement {
     _loading: {state: true},
     _loadingWasm: {state: true},
     _evaluators: {state: true},
-    _evaluatorsHelpLink: {state: true},
+    _evaluatorsDocsURL: {state: true},
     _result: {state: true},
   };
 
@@ -82,11 +82,11 @@ export class Playground extends LitElement {
   }
 
   _computeEvaluatorsHelpLink() {
-    let helpLinks = {};
+    let docsURLs = {};
     this._evaluators?.forEach((it) => {
-      helpLinks[it.id] = it.helpLink ?? null;
+      docsURLs[it.id] = it.docsURL ?? null;
     });
-    this._evaluatorsHelpLink = helpLinks;
+    this._evaluatorsDocsURL = docsURLs;
   }
 
   render() {
@@ -163,9 +163,7 @@ export class Playground extends LitElement {
                   examples="${JSON.stringify(CONFIG_EXAMPLES[this.evaluator])}"
                   config="${this.config}"
                   @config-changed="${(e) => (this.config = e.detail.value)}"
-                  config-help-link="${this._evaluatorsHelpLink?.[
-                    this.evaluator
-                  ]}"
+                  config-docs-url="${this._evaluatorsDocsURL?.[this.evaluator]}"
                   @config-example-changed="${this._handleConfigExampleChanged}"
                 >
                   >

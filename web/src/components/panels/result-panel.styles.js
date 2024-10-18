@@ -61,6 +61,14 @@ const resultPanelStyle = css`
     align-items: center;
     cursor: default;
   }
+
+  .cm-editor {
+    height: calc(100%);
+  }
+
+  .cm-scroller {
+    overflow: auto;
+  }
 `;
 
 const jsondiffpatchStyle = css`

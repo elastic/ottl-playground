@@ -7,6 +7,13 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
+type Metadata struct {
+	Id      string
+	Name    string
+	Version string
+	DocsURL string
+}
+
 // Executor evaluates OTTL statements using specific configurations and inputs.
 type Executor interface {
 	// ExecuteLogStatements evaluates log statements using the given configuration and JSON payload.
@@ -18,4 +25,13 @@ type Executor interface {
 	ExecuteMetricStatements(config, input string) ([]byte, error)
 	// ObservedLogs returns the statements execution's logs
 	ObservedLogs() *observer.ObservedLogs
+	// Metadata returns information about the executor
+	Metadata() Metadata
+}
+
+func Executors() []Executor {
+	return []Executor{
+		NewTransformProcessorExecutor(),
+		NewFilterProcessorExecutor(),
+	}
 }
