@@ -8,6 +8,7 @@ import './panels/result-panel';
 import {playgroundStyles} from './playground.styles';
 import {nothing} from 'lit';
 import {getJsonPayloadType} from './utils/json-payload';
+import {base64ToUtf8, utf8ToBase64} from './utils/base64';
 
 export class Playground extends LitElement {
   static properties = {
@@ -17,6 +18,7 @@ export class Playground extends LitElement {
     evaluator: {type: String},
     hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
+    disableShareLink: {type: Boolean, attribute: 'disable-share-link'},
     baseUrl: {type: String, attribute: 'base-url'},
 
     _loading: {state: true},
@@ -30,6 +32,17 @@ export class Playground extends LitElement {
     super();
     this._initDefaultValues();
     this._addEventListeners();
+  }
+
+  _initDefaultValues() {
+    this._loading = true;
+    this.evaluator = 'transform_processor';
+    this._hideEvaluators = false;
+    this.hideRunButton = false;
+    this.disableShareLink = false;
+    this.title = 'OTTL Playground';
+    this.payload = '{}';
+    this.baseUrl = '';
   }
 
   static get styles() {
@@ -51,27 +64,42 @@ export class Playground extends LitElement {
     this._setSelectedPayloadExample('');
   }
 
-  _initDefaultValues() {
-    this._loading = true;
-    this.evaluator = 'transform_processor';
-    this._hideEvaluators = false;
-    this.hideRunButton = false;
-    this.title = 'OTTL Playground';
-    this.payload = '{}';
-    this.baseUrl = '';
-  }
-
   firstUpdated() {
     this._spitComponents();
     this._loading = false;
     this._fetchWebAssembly();
+    this._loadURLBase64DataHash();
   }
 
   willUpdate(changedProperties) {
     if (changedProperties.has('_evaluators')) {
-      this._computeEvaluatorsHelpLink();
+      this._computeEvaluatorsDocsURL();
     }
     super.willUpdate(changedProperties);
+  }
+
+  _loadURLBase64DataHash() {
+    if (this.disableShareLink === true) return;
+    let hash = window.top.location.hash?.substring(1);
+    if (hash) {
+      try {
+        let data = JSON.parse(base64ToUtf8(hash));
+        if (data.payload) {
+          try {
+            data.payload = JSON.stringify(JSON.parse(data.payload), null, 2);
+          } catch (e) {
+            // Ignore
+          }
+        }
+        this.state = {
+          config: data?.config,
+          evaluator: data?.evaluator,
+          payload: data?.payload,
+        };
+      } catch (e) {
+        // Ignore
+      }
+    }
   }
 
   _setSelectedPayloadExample(example) {
@@ -81,7 +109,7 @@ export class Playground extends LitElement {
     }
   }
 
-  _computeEvaluatorsHelpLink() {
+  _computeEvaluatorsDocsURL() {
     let docsURLs = {};
     this._evaluators?.forEach((it) => {
       docsURLs[it.id] = it.docsURL ?? null;
@@ -108,6 +136,8 @@ export class Playground extends LitElement {
             evaluator="${this.evaluator}"
             evaluators="${JSON.stringify(this._evaluators)}"
             ?loading="${this._loadingWasm}"
+            @copy-link-clicked="${this._handleCopyLinkClick}"
+            ?hide-copy-link-button="${this.disableShareLink}"
           >
             <slot
               name="playground-controls-app-title-text"
@@ -253,13 +283,60 @@ export class Playground extends LitElement {
   _handleConfigExampleChanged(event) {
     let example = event.detail.value;
     if (example) {
-      let value = JSON.stringify(
+      this.payload = JSON.stringify(
         JSON.parse(PAYLOAD_EXAMPLES[example.otlp_type]),
         null,
         2
       );
-      this.payload = value;
       this._setSelectedPayloadExample(example.otlp_type);
+    }
+  }
+
+  _handleCopyLinkClick() {
+    let data = {...this.state};
+    try {
+      // Try to linearize the JSON to make it smaller
+      data.payload = JSON.stringify(JSON.parse(data.payload));
+    } catch (e) {
+      // Ignore and use it as it's
+    }
+
+    let key = utf8ToBase64(JSON.stringify(data));
+    this._copyToClipboard(this._buildUrlWithLink(key)).catch((e) => {
+      console.error(e);
+    });
+
+    document.location.hash = key;
+  }
+
+  _buildUrlWithLink(value) {
+    if (window.top.location.hash) {
+      return window.top.location.href.replace(
+        window.top.location.hash,
+        '#' + value
+      );
+    } else {
+      return window.top.location.href + '#' + value;
+    }
+  }
+
+  async _copyToClipboard(textToCopy) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(textToCopy);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = textToCopy;
+      textArea.style.position = 'absolute';
+      textArea.style.left = '-999999px';
+      document.body.prepend(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+      } catch (error) {
+        console.error(error);
+      } finally {
+        textArea.remove();
+      }
     }
   }
 }

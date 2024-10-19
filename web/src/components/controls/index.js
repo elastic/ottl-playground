@@ -2,6 +2,7 @@ import {css, html, LitElement} from 'lit-element';
 import {globalStyles} from '../../styles.js';
 import {repeat} from 'lit/directives/repeat.js';
 import {nothing} from 'lit';
+import './copy-link-button';
 
 export class PlaygroundControls extends LitElement {
   static properties = {
@@ -10,6 +11,7 @@ export class PlaygroundControls extends LitElement {
     evaluators: {type: Object},
     hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
+    hideCopyLinkButton: {type: Boolean, attribute: 'hide-copy-link-button'},
     loading: {type: Boolean},
   };
 
@@ -18,6 +20,7 @@ export class PlaygroundControls extends LitElement {
     this.title = 'OTTL Playground';
     this.hideEvaluators = false;
     this.hideRunButton = false;
+    this.hideCopyLinkButton = false;
     this.loading = false;
     this.evaluator = 'transform_processor';
 
@@ -46,7 +49,6 @@ export class PlaygroundControls extends LitElement {
           text-align: center;
           margin: 10px 0 10px 0;
           text-decoration: none;
-          font-size: 17px;
         }
 
         .playground-controls .app-title {
@@ -106,7 +108,7 @@ export class PlaygroundControls extends LitElement {
             ? nothing
             : html`
                 <div class="evaluator-container">
-                  <label for="evaluator">Evaluator</label>
+                  <label for="evaluator"><spans>Evaluator</spans></label>
                 </div>
                 <div class="evaluator-container">
                   <select
@@ -121,6 +123,7 @@ export class PlaygroundControls extends LitElement {
                       (it) => it.id,
                       (it) => {
                         return html` <option
+                          title="${it.name} (${it.version})"
                           ?selected="${it.id === this.evaluator}"
                           value="${it.id}"
                         >
@@ -161,6 +164,11 @@ export class PlaygroundControls extends LitElement {
                     </span>
                   </button>
                 </div>
+              `}
+          ${this.hideCopyLinkButton
+            ? nothing
+            : html`
+                <playground-copy-link-button></playground-copy-link-button>
               `}
           <slot name="custom-components"></slot>
         </div>
