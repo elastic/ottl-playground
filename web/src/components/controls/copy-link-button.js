@@ -73,22 +73,26 @@ export class PlaygroundCopyLinkButton extends LitElement {
     `;
   }
 
-  _handleCopyLinkClick() {
-    let copied = this.dispatchEvent(
-      new CustomEvent('copy-link-clicked', {
-        composed: true,
-        cancelable: true,
-      })
-    );
+  async _handleCopyLinkClick() {
+    this.loading = true;
+    setTimeout(() => {
+      let copied = this.dispatchEvent(
+        new CustomEvent('copy-link-click', {
+          composed: true,
+          cancelable: true,
+        })
+      );
 
-    if (copied) {
-      this.shadowRoot.querySelector('#copied-tooltip').style.visibility =
-        'visible';
-      setTimeout(() => {
+      if (copied) {
         this.shadowRoot.querySelector('#copied-tooltip').style.visibility =
-          'hidden';
-      }, 1500);
-    }
+          'visible';
+        setTimeout(() => {
+          this.shadowRoot.querySelector('#copied-tooltip').style.visibility =
+            'hidden';
+        }, 1500);
+      }
+      this.loading = false;
+    }, 0);
   }
 }
 

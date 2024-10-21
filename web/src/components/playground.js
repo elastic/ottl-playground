@@ -136,7 +136,7 @@ export class Playground extends LitElement {
             evaluator="${this.evaluator}"
             evaluators="${JSON.stringify(this._evaluators)}"
             ?loading="${this._loadingWasm}"
-            @copy-link-clicked="${this._handleCopyLinkClick}"
+            @copy-link-click="${this._handleCopyLinkClick}"
             ?hide-copy-link-button="${this.disableShareLink}"
           >
             <slot
