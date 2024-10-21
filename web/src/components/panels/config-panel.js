@@ -20,7 +20,7 @@ export class PlaygroundConfigPanel extends LitElement {
     super();
     this.hideExamples = false;
     this.examples = [];
-    this.configDocsURL = null;
+    this.configDocsURL = '';
   }
 
   static get styles() {
@@ -59,15 +59,11 @@ export class PlaygroundConfigPanel extends LitElement {
           <div class="header">
             <span>
               <strong>Configuration</strong>
-              <sup
-                ><small
-                  >${this.configDocsURL
-                    ? html`<a target="_blank" href="${this.configDocsURL}"
-                        >YAML</a
-                      >`
-                    : 'YAML'}</small
-                ></sup
-              >
+              <sup>
+                <a target="_blank" href="${this.configDocsURL}">
+                  <small>YAML</small>
+                </a>
+              </sup>
             </span>
           </div>
           <div class="right" style="display: flex">
