@@ -22,7 +22,7 @@ export class PlaygroundCopyLinkButton extends LitElement {
           background-color: #e8e7e7;
           border: none;
           color: black;
-          padding: 9px 9px 9px 12px;
+          padding: 9px 4px 9px 4px;
           width: 110px;
           text-align: center;
           text-decoration: none;
@@ -31,6 +31,7 @@ export class PlaygroundCopyLinkButton extends LitElement {
           border-radius: 4px;
           display: flex;
           align-items: center;
+          justify-content: center;
         }
 
         .link-button:hover {
