@@ -45,6 +45,15 @@ const playgroundStyle = css`
     background-color: #fff;
     z-index: 99;
   }
+
+  .beta-box {
+    font-size: 10px !important;
+    font-weight: 300 !important;
+    color: gray;
+    border: gray solid 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
 `;
 
 export const playgroundStyles = [globalStyles, playgroundStyle];

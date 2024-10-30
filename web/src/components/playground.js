@@ -143,7 +143,11 @@ export class Playground extends LitElement {
               name="playground-controls-app-title-text"
               slot="app-title-text"
             >
-              ${this.title}
+              ${this.title}&nbsp;<sup
+                class="beta-box"
+                title="The OTTL Playground is still in beta and the authors of this tool would welcome your feedback"
+                >BETA</sup
+              >
             </slot>
             <slot
               name="playground-controls-custom-components"
