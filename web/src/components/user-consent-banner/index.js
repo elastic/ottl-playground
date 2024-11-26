@@ -42,14 +42,14 @@ class PlaygroundUserConsentBanner extends LitElement {
       margin-bottom: 8px;
       font-weight: bold;
       font-size: 16px;
-      line-height: 24px;
+      line-height: 17px;
     }
 
     .user-consent-banner-description {
       font-weight: normal;
       color: #838f93;
-      font-size: 16px;
-      line-height: 19px;
+      font-size: 14px;
+      line-height: 15px;
       text-align: justify;
       width: 100%;
     }
@@ -67,8 +67,8 @@ class PlaygroundUserConsentBanner extends LitElement {
       text-decoration: none;
       text-align: center;
       font-weight: normal;
-      font-size: 16px;
-      line-height: 20px;
+      font-size: 15px;
+      line-height: 15px;
     }
 
     .user-consent-banner-button--secondary {
@@ -130,8 +130,10 @@ class PlaygroundUserConsentBanner extends LitElement {
                       agent identifiers. It excludes any user-identifiable
                       personal information.
                     </p>
-                    By using this website, you acknowledge the above terms and
-                    restrictions.
+                    <p>
+                      By using this website, you acknowledge the above terms and
+                      restrictions.
+                    </p>
                   </slot>
                 </div>
               </div>
