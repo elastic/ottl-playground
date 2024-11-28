@@ -2,7 +2,7 @@
 
 ### Building
 
-By default, the built resources are placed into the `ottlplayground/web/public` directory.
+By default, the built resources are placed into the `web/public` directory.
 After successfully compiling the WebAssembly and Frontend, this directory is ready to be deployed as a static site.
 Considering the WebAssembly's size, it's highly recommended to serve it using a compression method, such as 
 `gzip` or `brotli`.
@@ -24,7 +24,7 @@ make build-web
 
 ##### Developing 
 
-The `ottlplayground/web` contains the frontend source code, and uses `npm` as package manager.
+The `web` contains the frontend source code, and uses `npm` as package manager.
 To install the project dependencies:
 
 ```shell
