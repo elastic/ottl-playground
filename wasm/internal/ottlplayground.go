@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package internal
@@ -20,10 +19,14 @@ var (
 )
 
 func init() {
-	statementsExecutors = internal.Executors()
-	for _, executor := range statementsExecutors {
-		statementsExecutorsLookup[executor.Metadata().Id] = executor
+	for _, executor := range internal.Executors() {
+		registerStatementsExecutor(executor)
 	}
+}
+
+func registerStatementsExecutor(executor internal.Executor) {
+	statementsExecutors = append(statementsExecutors, executor)
+	statementsExecutorsLookup[executor.Metadata().ID] = executor
 }
 
 func newResult(json string, err string, logs string) map[string]any {
@@ -84,8 +87,9 @@ func StatementsExecutors() []any {
 	for _, executor := range statementsExecutors {
 		meta := executor.Metadata()
 		res = append(res, map[string]any{
-			"id":      meta.Id,
+			"id":      meta.ID,
 			"name":    meta.Name,
+			"path":    meta.Path,
 			"docsURL": meta.DocsURL,
 			"version": meta.Version,
 		})

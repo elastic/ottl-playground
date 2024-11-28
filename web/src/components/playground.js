@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {html, LitElement} from 'lit-element';
 import '../wasm_exec.js';
 import Split from 'split.js';
@@ -15,6 +17,7 @@ export class Playground extends LitElement {
     title: {type: String},
     config: {type: String},
     payload: {type: String},
+    version: {type: String},
     evaluator: {type: String},
     hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
@@ -25,6 +28,7 @@ export class Playground extends LitElement {
     _loadingWasm: {state: true},
     _evaluators: {state: true},
     _evaluatorsDocsURL: {state: true},
+    _versions: {state: true},
     _result: {state: true},
   };
 
@@ -36,7 +40,6 @@ export class Playground extends LitElement {
 
   _initDefaultValues() {
     this._loading = true;
-    this.evaluator = 'transform_processor';
     this._hideEvaluators = false;
     this.hideRunButton = false;
     this.disableShareLink = false;
@@ -51,24 +54,28 @@ export class Playground extends LitElement {
 
   get state() {
     return {
-      config: this.config,
-      payload: this.payload,
+      version: this.version,
       evaluator: this.evaluator,
+      payload: this.payload,
+      config: this.config,
     };
   }
 
   set state(state) {
+    this.version = state.version;
     this.evaluator = state.evaluator;
     this.payload = state.payload;
     this.config = state.config;
+    // Reset the payload example dropdown
     this._setSelectedPayloadExample('');
   }
 
   firstUpdated() {
     this._spitComponents();
     this._loading = false;
-    this._fetchWebAssembly();
-    this._loadURLBase64DataHash();
+    this._fetchWebAssemblyVersions().then(() => {
+      this._initState();
+    });
   }
 
   willUpdate(changedProperties) {
@@ -76,6 +83,36 @@ export class Playground extends LitElement {
       this._computeEvaluatorsDocsURL();
     }
     super.willUpdate(changedProperties);
+  }
+
+  _initState() {
+    let urlStateData = this._loadURLBase64DataHash();
+    let version =
+      urlStateData?.version ??
+      (this._versions &&
+        this._versions.length > 0 &&
+        this._versions[0]?.version);
+
+    if (urlStateData) {
+      this.state = {
+        version: version,
+        evaluator: urlStateData?.evaluator,
+        payload: urlStateData?.payload ?? '{}',
+        config: urlStateData?.config,
+      };
+    }
+
+    this._fetchWebAssembly(this._resolveWebAssemblyArtifact(version));
+  }
+
+  _fetchWebAssemblyVersions() {
+    return fetch('wasm/versions.json')
+      .then((response) => {
+        return response.json();
+      })
+      .then((json) => {
+        this._versions = json.versions;
+      });
   }
 
   _loadURLBase64DataHash() {
@@ -91,13 +128,9 @@ export class Playground extends LitElement {
             // Ignore
           }
         }
-        this.state = {
-          config: data?.config,
-          evaluator: data?.evaluator,
-          payload: data?.payload,
-        };
+        return data;
       } catch (e) {
-        // Ignore
+        return null;
       }
     }
   }
@@ -133,11 +166,13 @@ export class Playground extends LitElement {
             id="playground-controls"
             ?hide-run-button="${this.hideRunButton}"
             ?hide-evaluators=${this._hideEvaluators}
+            ?hide-copy-link-button="${this.disableShareLink}"
+            ?loading="${this._loadingWasm}"
             evaluator="${this.evaluator}"
             evaluators="${JSON.stringify(this._evaluators)}"
-            ?loading="${this._loadingWasm}"
+            version="${this.version}"
+            versions="${JSON.stringify(this._versions)}"
             @copy-link-click="${this._handleCopyLinkClick}"
-            ?hide-copy-link-button="${this.disableShareLink}"
           >
             <slot
               name="playground-controls-app-title-text"
@@ -195,30 +230,56 @@ export class Playground extends LitElement {
   }
 
   _addEventListeners() {
+    window.addEventListener('playground-wasm-ready', () => {
+      // eslint-disable-next-line no-undef
+      this._evaluators = statementsExecutors();
+      if (!this._evaluators) {
+        this.evaluator = '';
+      } else {
+        if (!this.evaluator) {
+          this.evaluator = this._evaluators[0]?.id;
+        } else if (!this._evaluators.some((e) => e.id === this.evaluator)) {
+          this.evaluator = this._evaluators[0]?.id;
+        }
+      }
+    });
+
     this.addEventListener('playground-run-requested', () => {
       this._runStatements();
     });
+
     this.addEventListener('evaluator-changed', (e) => {
       this.evaluator = e.detail.value;
     });
+
+    this.addEventListener('version-changed', (e) => {
+      this.version = e.detail.value;
+      this._fetchWebAssembly(this._resolveWebAssemblyArtifact(this.version));
+    });
   }
 
-  _fetchWebAssembly() {
+  _resolveWebAssemblyArtifact(version) {
+    return this._versions.find((e) => e.version === version)?.artifact;
+  }
+
+  _fetchWebAssembly(artifact) {
     // eslint-disable-next-line no-undef
     const go = new Go();
     this._loadingWasm = true;
 
     let wasmUrl = this.baseUrl
-      ? new URL('ottlplayground.wasm', this.baseUrl).href
-      : 'ottlplayground.wasm';
+      ? new URL(artifact, this.baseUrl).href
+      : artifact;
+
     WebAssembly.instantiateStreaming(fetch(wasmUrl), go.importObject).then(
       (result) => {
         go.run(result.instance);
-        // eslint-disable-next-line no-undef
-        this._evaluators = statementsExecutors();
         this.updateComplete.then(() => {
           this._loadingWasm = false;
           const event = new CustomEvent('playground-wasm-ready', {
+            detail: {
+              value: artifact,
+            },
             bubbles: true,
             composed: true,
             cancelable: true,

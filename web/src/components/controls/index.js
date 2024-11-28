@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {css, html, LitElement} from 'lit-element';
 import {globalStyles} from '../../styles.js';
 import {repeat} from 'lit/directives/repeat.js';
@@ -9,6 +11,8 @@ export class PlaygroundControls extends LitElement {
     title: {type: String},
     evaluator: {type: String},
     evaluators: {type: Object},
+    version: {type: String},
+    versions: {type: Object},
     hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
     hideCopyLinkButton: {type: Boolean, attribute: 'hide-copy-link-button'},
@@ -23,7 +27,7 @@ export class PlaygroundControls extends LitElement {
     this.hideCopyLinkButton = false;
     this.loading = false;
     this.evaluator = 'transform_processor';
-
+    this.versions = [{version: '-', artifact: 'ottlplayground.wasm'}];
     this.evaluators = [
       {id: 'transform_processor', name: 'Transform processor'},
       {id: 'filter_processor', name: 'Filter processor'},
@@ -69,10 +73,10 @@ export class PlaygroundControls extends LitElement {
 
         .run-button {
           background-color: #04aa6d;
-          border: none;
+          border: 1px solid #049d65;
           color: white;
           padding: 10px;
-          width: 70px;
+          width: 75px;
           text-align: center;
           text-decoration: none;
           display: inline-block;
@@ -108,7 +112,30 @@ export class PlaygroundControls extends LitElement {
             ? nothing
             : html`
                 <div class="evaluator-container">
-                  <label for="evaluator"><spans>Evaluator</spans></label>
+                  <select
+                    id="version"
+                    ?disabled="${this.loading}"
+                    name="version"
+                    @change="${this._notifyVersionChanged}"
+                    title="Version"
+                  >
+                    <optgroup label="OpenTelemetry Collector Contrib">
+                      ${this.versions &&
+                      repeat(
+                        this.versions,
+                        (it) => it.version,
+                        (it) => {
+                          return html` <option
+                            title="opentelemetry-collector-contrib (${it.version})"
+                            ?selected="${it.version === this.version}"
+                            value="${it.version}"
+                          >
+                            ${it.version}
+                          </option>`;
+                        }
+                      )}
+                    </optgroup>
+                  </select>
                 </div>
                 <div class="evaluator-container">
                   <select
@@ -116,6 +143,7 @@ export class PlaygroundControls extends LitElement {
                     ?disabled="${this.loading}"
                     name="evaluator"
                     @change="${this._notifyEvaluatorChanged}"
+                    title="Evaluator"
                   >
                     ${this.evaluators &&
                     repeat(
@@ -180,6 +208,17 @@ export class PlaygroundControls extends LitElement {
     this.dispatchEvent(
       new Event('playground-run-requested', {bubbles: true, composed: true})
     );
+  }
+
+  _notifyVersionChanged(e) {
+    const event = new CustomEvent('version-changed', {
+      detail: {
+        value: e.target.value,
+      },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(event);
   }
 
   _notifyEvaluatorChanged(e) {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 export const getJsonPayloadType = (payload) => {
   let json = JSON.parse(payload);
   if (json['resourceLogs']) {

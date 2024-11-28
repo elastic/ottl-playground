@@ -12,15 +12,13 @@ COPY ./ .
 
 ENV WASM_OUTPUT_DIR=..
 RUN make build-wasm
-RUN gzip -9 /build/ottlplayground.wasm
-RUN mv /build/ottlplayground.wasm.gz /build/ottlplayground.wasm
-RUN make build-server
+RUN make build-test-server
 
-# Static server
+# Static server (TODO: Replace by nginx or any other server that supports gzip or brotli)
 FROM scratch
 
 COPY --from=web /web/public /ottlplayground/web/public
-COPY --from=builder /build/ottlplayground.wasm /ottlplayground/web/public
+COPY --from=builder /build/web/public/wasm /ottlplayground/web/public/wasm
 COPY --from=builder /build/server /ottlplayground
 
 ENTRYPOINT ["./ottlplayground/server"]

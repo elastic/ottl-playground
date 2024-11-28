@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package internal
@@ -75,7 +74,7 @@ func (p *processorExecutor[C]) ExecuteLogStatements(yamlConfig, input string) ([
 		return nil
 	})
 
-	logsProcessor, err := p.factory.CreateLogsProcessor(context.Background(), p.settings, config, logsConsumer)
+	logsProcessor, err := p.factory.CreateLogs(context.Background(), p.settings, config, logsConsumer)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (p *processorExecutor[C]) ExecuteTraceStatements(yamlConfig, input string) 
 		return nil
 	})
 
-	tracesProcessor, err := p.factory.CreateTracesProcessor(context.Background(), p.settings, config, tracesConsumer)
+	tracesProcessor, err := p.factory.CreateTraces(context.Background(), p.settings, config, tracesConsumer)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +148,7 @@ func (p *processorExecutor[C]) ExecuteMetricStatements(yamlConfig, input string)
 		return nil
 	})
 
-	metricsProcessor, err := p.factory.CreateMetricsProcessor(context.Background(), p.settings, config, metricsConsumer)
+	metricsProcessor, err := p.factory.CreateMetrics(context.Background(), p.settings, config, metricsConsumer)
 	if err != nil {
 		return nil, err
 	}

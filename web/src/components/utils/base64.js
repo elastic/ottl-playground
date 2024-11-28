@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 export function utf8ToBase64(str) {
   const encoder = new TextEncoder();
   const utf8Array = encoder.encode(str);

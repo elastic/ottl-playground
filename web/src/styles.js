@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {css} from 'lit-element';
 
 export const globalStyles = css`

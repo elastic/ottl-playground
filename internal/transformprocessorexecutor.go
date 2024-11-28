@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package internal
@@ -12,12 +11,12 @@ type transformProcessorExecutor struct {
 }
 
 func (t transformProcessorExecutor) Metadata() Metadata {
-	return Metadata{
-		Id:      "transform_processor",
-		Name:    "Transform processor",
-		DocsURL: "https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
-		Version: "v0.110.0",
-	}
+	return newMetadata(
+		"transform_processor",
+		"Transform processor",
+		"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
+		"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
+	)
 }
 
 // NewTransformProcessorExecutor creates an internal.Executor that runs OTTL statements using

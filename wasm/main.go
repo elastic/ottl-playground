@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 //go:build js && wasm
@@ -35,7 +34,7 @@ func executeStatementsWrapper() js.Func {
 }
 
 func getEvaluatorsWrapper() js.Func {
-	return js.FuncOf(func(_ js.Value, args []js.Value) any {
+	return js.FuncOf(func(_ js.Value, _ []js.Value) any {
 		defer handlePanic()
 		return js.ValueOf(internal.StatementsExecutors())
 	})

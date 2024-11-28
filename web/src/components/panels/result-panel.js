@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {html, LitElement} from 'lit-element';
 import * as htmlFormatter from 'jsondiffpatch/formatters/html';
 import {basicSetup, EditorView} from 'codemirror';

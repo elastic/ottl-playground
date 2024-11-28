@@ -1,10 +1,8 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +13,6 @@ import (
 const (
 	relativeWebPublicDir = "web/public"
 	defaultAddr          = ":8080"
-	webAssemblyFileName  = "ottlplayground.wasm"
 )
 
 func main() {
@@ -25,7 +22,6 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(fmt.Sprintf("/%s", webAssemblyFileName), newWebAssemblyHandler())
 	mux.HandleFunc("/", http.FileServer(http.Dir(webPublicDir())).ServeHTTP)
 
 	server := &http.Server{
@@ -40,35 +36,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func newWebAssemblyHandler() http.Handler {
-	wasmFile := filepath.Join(webPublicDir(), webAssemblyFileName)
-	file, err := os.Open(wasmFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	detectBuff := make([]byte, 512)
-	_, err = file.Read(detectBuff)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_ = file.Close()
-
-	contentType := http.DetectContentType(detectBuff)
-	if contentType == "application/x-gzip" {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-type", "application/wasm")
-			w.Header().Set("Content-Encoding", "gzip")
-			http.ServeFile(w, r, wasmFile)
-		})
-	}
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, wasmFile)
-	})
 }
 
 func webPublicDir() string {

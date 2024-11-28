@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package internal
@@ -8,10 +7,21 @@ import (
 )
 
 type Metadata struct {
-	Id      string
+	ID      string
 	Name    string
+	Path    string
 	Version string
 	DocsURL string
+}
+
+func newMetadata(id, name, path, docsURL string) Metadata {
+	return Metadata{
+		ID:      id,
+		Name:    name,
+		Path:    path,
+		DocsURL: docsURL,
+		Version: CollectorContribProcessorsVersion,
+	}
 }
 
 // Executor evaluates OTTL statements using specific configurations and inputs.

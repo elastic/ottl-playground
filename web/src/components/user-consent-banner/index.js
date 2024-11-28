@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {LitElement, html, css, nothing} from 'lit';
 
 class PlaygroundUserConsentBanner extends LitElement {
@@ -33,9 +35,6 @@ class PlaygroundUserConsentBanner extends LitElement {
 
     .user-consent-banner-copy {
       margin-bottom: 16px;
-    }
-
-    .user-consent-banner-actions {
     }
 
     .user-consent-banner-header {
@@ -137,7 +136,7 @@ class PlaygroundUserConsentBanner extends LitElement {
                   </slot>
                 </div>
               </div>
-              <div class="user-consent-banner-actions">
+              <div>
                 <button
                   class="user-consent-banner-button"
                   @click="${this.acknowledgeNotice}"

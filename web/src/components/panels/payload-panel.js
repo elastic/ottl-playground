@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import {css, html, LitElement} from 'lit-element';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';

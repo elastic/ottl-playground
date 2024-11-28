@@ -1,4 +1,3 @@
-// Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
 package internal
@@ -12,6 +11,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
 func Test_NewErrorResult(t *testing.T) {
@@ -115,10 +116,15 @@ func Test_ExecuteStatements(t *testing.T) {
 	_, observedLogs := observer.New(zap.NewNop().Core())
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockExecutor := new(MockExecutor)
 			executorName := tt.name
-			statementsExecutors[executorName] = mockExecutor
+			mockExecutor := &MockExecutor{
+				metadata: internal.Metadata{
+					ID:   executorName,
+					Name: executorName,
+				},
+			}
 
+			registerStatementsExecutor(mockExecutor)
 			mockExecutor.On(tt.executorFunc, testConfig, ottlDataPayload).Return(tt.expectedOutput, tt.expectedError)
 			mockExecutor.On("ObservedLogs").Return(observedLogs)
 
@@ -154,6 +160,7 @@ func Test_TakeObserved_Logs(t *testing.T) {
 
 type MockExecutor struct {
 	mock.Mock
+	metadata internal.Metadata
 }
 
 func (m *MockExecutor) ExecuteLogStatements(config, payload string) ([]byte, error) {
@@ -174,4 +181,8 @@ func (m *MockExecutor) ExecuteMetricStatements(config, payload string) ([]byte, 
 func (m *MockExecutor) ObservedLogs() *observer.ObservedLogs {
 	args := m.Called()
 	return args.Get(0).(*observer.ObservedLogs)
+}
+
+func (m *MockExecutor) Metadata() internal.Metadata {
+	return m.metadata
 }
