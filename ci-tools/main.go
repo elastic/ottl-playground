@@ -80,6 +80,7 @@ func main() {
 		err = validateWebAssemblyVersions()
 		if err != nil {
 			fmt.Println(err.Error())
+			os.Exit(1)
 		}
 	default:
 		flag.PrintDefaults()
