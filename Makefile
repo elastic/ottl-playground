@@ -23,7 +23,7 @@ build-unregistered-versions:
 	$(eval PROCESSORS_VERSIONS ?= $(shell $(GOCMD) run ci-tools/main.go get-unregistered-versions))
 	for v in $(PROCESSORS_VERSIONS); do \
 		export PROCESSORS_VERSION=$$v ; \
-		$(MAKE) update-processor-version && $(MAKE) build-wasm $(MAKE) register-version ; \
+		$(MAKE) update-processor-version && $(MAKE) build-wasm && $(MAKE) register-version ; \
 	done
 
 .PHONY: update-processor-version
