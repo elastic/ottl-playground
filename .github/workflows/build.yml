@@ -1,0 +1,66 @@
+name: Build artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+        source_repository:
+          description: 'Repository to checkout the playground code'
+          required: true
+          default: 'edmocosta/ottl-playground'
+        source_branch:
+          description: 'Branch to checkout the playground code'
+          required: true
+          default: 'main'
+        wasm_compression:
+          type: choice
+          description: WASM files compression
+          options: 
+          - none
+          - brotli
+          - gzip    
+        build_versions:
+          type: number
+          description: Additional opentelemetry-collector-contrib versions to compile and be supported by the playground.
+          default: '10'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout playground code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.source_repository }}
+          ref: ${{ inputs.source_branch }}
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'          
+      - name: Build
+        run: make build
+      - name: Build multiple versions
+        if: inputs.build_versions > 0
+        run: MAX_WASM_PROCESSORS_VERSIONS=${{ inputs.build_versions }} make build-unregistered-versions      
+      - name: Compress WASM files using brotli
+        if: inputs.wasm_compression == 'brotli'
+        run: | 
+            for file in web/public/wasm/ottlplayground-*.wasm ; do  brotli -9j "$file" ; done
+            for file in web/public/wasm/ottlplayground-*.wasm.br ; do mv "$file" "${file%.*}" ; done   
+      - name: Compress WASM files using gzip
+        if: inputs.wasm_compression == 'gzip'
+        run: | 
+            for file in web/public/wasm/ottlplayground-*.wasm ; do gzip -9 "$file" ; done
+            for file in web/public/wasm/ottlplayground-*.wasm.gz ; do mv "$file" "${file%.*}" ; done            
+      - name: Validate registered versions
+        run: make validate-registered-versions
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ottl-playground-package
+          path: ./web/public
+          retention-days: 1
+          overwrite: true
