@@ -13,11 +13,17 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"golang.org/x/mod/modfile"
 	"golang.org/x/mod/semver"
 )
+
+type args struct {
+	version                   string
+	unregisteredVersionsCount int
+}
 
 func main() {
 	currentVersion, err := lookupVersion()
@@ -25,17 +31,23 @@ func main() {
 		fmt.Println(err)
 	}
 
-	var version string
-	getVersionCmd := flag.NewFlagSet("get-version", flag.ExitOnError)
-	getUnregisteredVersionsCmd := flag.NewFlagSet("get-unregistered-versions", flag.ExitOnError)
-	validateRegisteredVersionsCmd := flag.NewFlagSet("validate-registered-versions", flag.ExitOnError)
-	registerWasmCmd := flag.NewFlagSet("register-wasm", flag.ExitOnError)
-	generateConstantsCmd := flag.NewFlagSet("generate-constants", flag.ExitOnError)
-	generateProcessorsUpdateCmd := flag.NewFlagSet("generate-processors-update", flag.ExitOnError)
+	commandsArgs := &args{}
 
-	addVersionFlag(&version, currentVersion, registerWasmCmd)
-	addVersionFlag(&version, currentVersion, generateConstantsCmd)
-	addVersionFlag(&version, currentVersion, generateProcessorsUpdateCmd)
+	getVersionCmd := flag.NewFlagSet("get-version", flag.ExitOnError)
+	validateRegisteredVersionsCmd := flag.NewFlagSet("validate-registered-versions", flag.ExitOnError)
+
+	getUnregisteredVersionsCmd := flag.NewFlagSet("get-unregistered-versions", flag.ExitOnError)
+	getUnregisteredVersionsCmd.IntVar(&commandsArgs.unregisteredVersionsCount, "count", lookupUnregisteredVersionsCount(),
+		"Number of unregistered versions to list")
+
+	registerWasmCmd := flag.NewFlagSet("register-wasm", flag.ExitOnError)
+	addVersionFlag(&commandsArgs.version, currentVersion, registerWasmCmd)
+
+	generateConstantsCmd := flag.NewFlagSet("generate-constants", flag.ExitOnError)
+	addVersionFlag(&commandsArgs.version, currentVersion, generateConstantsCmd)
+
+	generateProcessorsUpdateCmd := flag.NewFlagSet("generate-processors-update", flag.ExitOnError)
+	addVersionFlag(&commandsArgs.version, currentVersion, generateProcessorsUpdateCmd)
 
 	switch os.Args[1] {
 	case getVersionCmd.Name():
@@ -47,30 +59,31 @@ func main() {
 		}
 	case generateConstantsCmd.Name():
 		_ = generateConstantsCmd.Parse(os.Args[2:])
-		err = generateVersionsDotGoFile(version)
+		err = generateVersionsDotGoFile(commandsArgs.version)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			fmt.Println(version)
+			fmt.Println(commandsArgs.version)
 		}
 	case registerWasmCmd.Name():
 		_ = registerWasmCmd.Parse(os.Args[2:])
-		err = registerWebAssemblyVersion(version)
+		err = registerWebAssemblyVersion(commandsArgs.version)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			fmt.Println(version)
+			fmt.Println(commandsArgs.version)
 		}
 	case generateProcessorsUpdateCmd.Name():
 		_ = generateProcessorsUpdateCmd.Parse(os.Args[2:])
-		argument, err := generateProcessorsGoGetArgument(version)
+		argument, err := generateProcessorsGoGetArgument(commandsArgs.version)
 		if err != nil {
 			fmt.Println(err)
 		} else {
 			fmt.Println(argument)
 		}
 	case getUnregisteredVersionsCmd.Name():
-		releases, err := getNonRegisteredCollectorContribReleases()
+		_ = getUnregisteredVersionsCmd.Parse(os.Args[2:])
+		releases, err := getUnregisteredVersions(commandsArgs.unregisteredVersionsCount)
 		if err != nil {
 			fmt.Println(err)
 		} else {
@@ -106,6 +119,18 @@ func lookupWasmVersionsJSONPath() string {
 		return path
 	}
 	return filepath.Join("web", "public", "wasm", "versions.json")
+}
+
+func lookupUnregisteredVersionsCount() int {
+	defaultVersionsCount := 10
+	value, ok := os.LookupEnv("MAX_WASM_PROCESSORS_VERSIONS")
+	if ok {
+		intValue, err := strconv.Atoi(value)
+		if err == nil {
+			return intValue
+		}
+	}
+	return defaultVersionsCount
 }
 
 func extractProcessorsVersionFromGoModule() (string, error) {
@@ -307,7 +332,7 @@ func generateVersionsDotGoFile(version string) error {
 	return nil
 }
 
-func getNonRegisteredCollectorContribReleases() (string, error) {
+func getUnregisteredVersions(maxNumOfVersions int) (string, error) {
 	wasmVersionsFilePath := lookupWasmVersionsJSONPath()
 	registeredVersions := map[string]bool{}
 
@@ -358,5 +383,10 @@ func getNonRegisteredCollectorContribReleases() (string, error) {
 	}
 
 	slices.SortFunc(newVersions, semver.Compare)
+
+	if len(newVersions) > maxNumOfVersions {
+		newVersions = newVersions[len(newVersions)-maxNumOfVersions:]
+	}
+
 	return strings.Join(newVersions, " "), nil
 }
