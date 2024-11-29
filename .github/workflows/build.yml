@@ -2,7 +2,7 @@ name: Build artifact
 
 on:
   workflow_dispatch:
-    inputs:
+    inputs: &inputs
         source_repository:
           description: 'Repository to checkout the playground code'
           required: true
@@ -22,6 +22,9 @@ on:
           type: number
           description: Additional opentelemetry-collector-contrib versions to compile and be supported by the playground.
           default: '10'
+  
+  workflow_call:
+    inputs: *inputs
 
 jobs:
   build:
