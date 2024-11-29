@@ -2,7 +2,7 @@ name: Build artifact
 
 on:
   workflow_dispatch:
-    inputs: &inputs
+    inputs:
         source_repository:
           description: 'Repository to checkout the playground code'
           required: true
@@ -24,7 +24,21 @@ on:
           default: '10'
   
   workflow_call:
-    inputs: *inputs
+    inputs:
+        source_repository:
+          type: string
+          required: true
+          default: 'edmocosta/ottl-playground'
+        source_branch:
+          type: string
+          required: true
+          default: 'main'
+        wasm_compression:
+          type: string
+          default: 'none' 
+        build_versions:
+          type: number
+          default: 10
 
 jobs:
   build:
