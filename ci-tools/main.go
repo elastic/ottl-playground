@@ -142,7 +142,7 @@ func extractProcessorsVersionFromGoModule() (string, error) {
 
 func registerWebAssemblyVersion(version string) error {
 	wasmVersionsFilePath := lookupWasmVersionsJSONPath()
-	wasmVersionsFile, err := os.OpenFile(wasmVersionsFilePath, os.O_RDWR|os.O_CREATE, 0600)
+	wasmVersionsFile, err := os.OpenFile(wasmVersionsFilePath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
 		return err
 	}
