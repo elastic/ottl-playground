@@ -76,6 +76,7 @@ export class PlaygroundConfigPanel extends LitElement {
                     id="example-input"
                     @change="${this._handleExampleChanged}"
                     title="Select an example"
+                    style="max-width: 250px"
                   >
                     <option selected disabled value="">Example</option>
                     ${this.examples &&
@@ -83,7 +84,9 @@ export class PlaygroundConfigPanel extends LitElement {
                       this.examples,
                       (it) => it.name,
                       (it, idx) => {
-                        return html`<option value="${idx}">${it.name}</option>`;
+                        return html`<option value="${idx}" title="${it.name}">
+                          ${it.name}
+                        </option>`;
                       }
                     )}
                   </select>
