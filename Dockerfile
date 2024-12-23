@@ -9,16 +9,17 @@ RUN make build-web
 FROM golang:1.22 AS builder
 WORKDIR /build
 COPY ./ .
-
 ENV WASM_OUTPUT_DIR=..
 RUN make build-wasm
-RUN make build-test-server
+ARG SKIP_BUILD_UNREGISTERED_VERSIONS
+RUN if [ "$SKIP_BUILD_UNREGISTERED_VERSIONS" = "" ]; then make build-unregistered-versions ;  fi
 
-# Static server (TODO: Replace by nginx or any other server that supports gzip or brotli)
-FROM scratch
-
-COPY --from=web /web/public /ottlplayground/web/public
-COPY --from=builder /build/web/public/wasm /ottlplayground/web/public/wasm
-COPY --from=builder /build/server /ottlplayground
-
-ENTRYPOINT ["./ottlplayground/server"]
+# NGINX with brotli
+FROM alpine
+RUN apk add brotli nginx nginx-mod-http-brotli
+COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY --from=web /web/public /usr/share/nginx/html
+COPY --from=builder /build/web/public/wasm /usr/share/nginx/html/wasm
+RUN for file in /usr/share/nginx/html/wasm/ottlplayground-*.wasm ; do  brotli -9j "$file" ; done
+CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 8080

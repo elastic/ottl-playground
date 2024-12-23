@@ -1,37 +1,28 @@
 # OTTL Playground
 
+The OTTL Playground is a powerful and user-friendly tool designed to allow users to experiment with OTTL effortlessly. 
+The playground provides a rich interface for users to create, modify, and test statements in real-time, making it easier 
+to understand how different configurations impact the OTLP data transformation.
+
 ### Building
 
-By default, the built resources are placed into the `web/public` directory.
-After successfully compiling the WebAssembly and Frontend, this directory is ready to be deployed as a static site.
-Considering the WebAssembly's size, it's highly recommended to serve it using a compression method, such as 
-`gzip` or `brotli`.
+**Requirements:**
+- Go 1.22 (https://go.dev/doc/install)
+- Node.js (https://nodejs.org/en/download/prebuilt-installer)
 
-#### WebAssembly
-
-```shell
-make build-wasm
-```
-
-#### Frontend
-
-Requirements:
-- Node.js [installation](https://nodejs.org/en/download/package-manager)
+By default, the built resources are placed into the `web/public` directory. After successfully 
+compiling the WebAssembly and Frontend, this directory is ready to be deployed as a static website.
+Given that the WebAssembly size is relatively big, it's highly recommended to serve it using a compression 
+method, such as `gzip` or `brotli`.
 
 ```shell
-make build-web
+make build
 ```
 
-##### Developing 
+##### Developing
 
-The `web` contains the frontend source code, and uses `npm` as package manager.
-To install the project dependencies:
-
-```shell
-npm install
-```
-
-Start local development server:
+The `web` directory contains the frontend source code, and uses `npm` as package manager.
+To start the local development server:
 
 ```shell
 npm run serve public
@@ -47,15 +38,20 @@ npm run watch
 
 #### Local
 
-After building the project resources, it can be run - for testing purpose - by using the `main.go` implementation. 
-To improve the load performance and saving bandwidth in real deployments, please confider hosting it using
-a server with compressing capabilities, such as `gzip` or `brotli`.
+For **testing** purpose only, after successfully building the project resources, it can be run by 
+using the `main.go` server implementation. 
+
+To improve the load performance and saving bandwidth in real deployments, 
+please confider hosting it using a server with compressing capabilities, such as `gzip` or `brotli`.
 
 ```
 go run main.go
 ```
 
 #### Docker
+
+The Docker image delivered with this project serves the static website using Nginx (port 8080), and 
+applying static `brotli` compression to the WebAssemblies files.
 
 ```shell
 docker build . -t ottlplayground
@@ -64,13 +60,3 @@ docker build . -t ottlplayground
 ```shell
 docker run -d -p 8080:8080 ottlplayground
 ```
-
-The listening address can be changed by setting the environment variable `ADDR`,
-in the form "host:port", If empty, ":8080" is used.
-
-```shell
-docker run -d -p 80:80 -e ADDR=":80" ottlplayground
-```
-
-The Docker image server does not support traffic compressing, and its use is not recommended
-for hosting production environments.
