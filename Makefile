@@ -30,6 +30,17 @@ build-unregistered-versions:
 update-processor-version:
 	$(eval PARAMS = $(shell $(GOCMD) run ci-tools/main.go generate-processors-update -version=$(PROCESSORS_VERSION)))
 	$(GOCMD) get $(PARAMS)
+	@FIRST_PROCESSOR=$$(echo "$(PARAMS)" | awk '{print $$1}'); \
+	COLLECTOR_DEPENDENCIES=$$($(GOCMD) mod graph | grep $$FIRST_PROCESSOR | grep "go.opentelemetry.io/collector/" | awk '{print $$2}' | sort -u); \
+	COLLECTOR_PARAMS=""; \
+	for DEP in $$COLLECTOR_DEPENDENCIES; do \
+    	DEP_NAME=$$(echo $$DEP | cut -d'@' -f1); \
+    	DEP_VERSION=$$(echo $$DEP | cut -d'@' -f2); \
+    	if ! $(GOCMD) list -m -json $$DEP_NAME | grep -q "\"Indirect\":true"; then \
+    		COLLECTOR_PARAMS="$$DEP_NAME@$$DEP_VERSION $$COLLECTOR_PARAMS"; \
+    	fi; \
+    done; \
+    $(GOCMD) get $$COLLECTOR_PARAMS;
 	$(MAKE) tidy
 
 .PHONY: build-wasm

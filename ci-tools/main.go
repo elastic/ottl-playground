@@ -292,14 +292,6 @@ func generateProcessorsGoGetArgument(version string) (string, error) {
 			argument.WriteString(" ")
 		}
 	}
-
-	// Additional collector dependencies
-	argument.WriteString("go.opentelemetry.io/collector/consumer@" + version)
-	argument.WriteString(" ")
-	argument.WriteString("go.opentelemetry.io/collector/processor@" + version)
-	argument.WriteString(" ")
-	argument.WriteString("go.opentelemetry.io/collector/component@" + version)
-
 	return argument.String(), nil
 }
 
@@ -374,11 +366,20 @@ func getUnregisteredVersions(maxNumOfVersions int) (string, error) {
 		return "", err
 	}
 
+	ignoredVersions := map[string]struct{}{}
+	for _, ignoredVersion := range strings.Split(os.Getenv("IGNORED_WASM_PROCESSORS_VERSIONS"), " ") {
+		ignoredVersions[ignoredVersion] = struct{}{}
+	}
+
 	var newVersions []string
 	for _, release := range data {
+		version := release["name"].(string)
+		if _, ok := ignoredVersions[version]; ok {
+			continue
+		}
 		// versions <= v0.110.0 fails to compile due to some breaking changes
-		if !registeredVersions[release["name"].(string)] && semver.Compare(release["name"].(string), "v0.110.0") > 0 {
-			newVersions = append(newVersions, release["name"].(string))
+		if !registeredVersions[version] && semver.Compare(version, "v0.110.0") > 0 {
+			newVersions = append(newVersions, version)
 		}
 	}
 
