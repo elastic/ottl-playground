@@ -101,8 +101,8 @@ const jsondiffpatchStyle = css`
     */
 
   .jsondiffpatch-delta {
-    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Courier,
-      monospace;
+    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco,
+      Courier, monospace;
     font-size: 12px;
     margin: 0;
     padding: 0 0 0 12px;
@@ -110,8 +110,8 @@ const jsondiffpatchStyle = css`
   }
 
   .jsondiffpatch-delta pre {
-    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Courier,
-      monospace;
+    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco,
+      Courier, monospace;
     font-size: 12px;
     margin: 0;
     padding: 0;
@@ -303,8 +303,8 @@ const jsondiffpatchStyle = css`
   /* */
 
   .jsondiffpatch-annotated-delta {
-    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Courier,
-      monospace;
+    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco,
+      Courier, monospace;
     font-size: 12px;
     margin: 0;
     padding: 0 0 0 12px;
@@ -312,8 +312,8 @@ const jsondiffpatchStyle = css`
   }
 
   .jsondiffpatch-annotated-delta pre {
-    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Courier,
-      monospace;
+    font-family: 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco,
+      Courier, monospace;
     font-size: 12px;
     margin: 0;
     padding: 0;
