@@ -34,7 +34,7 @@ export class PlaygroundControls extends LitElement {
     ];
 
     window.addEventListener('keydown', (event) => {
-      if (event.ctrlKey && event.key.toUpperCase() === 'R') {
+      if (event.shiftKey && event.key === 'Enter') {
         this._notifyRunRequested();
       }
     });
@@ -182,10 +182,10 @@ export class PlaygroundControls extends LitElement {
                           `
                         : html`
                             <span class="tooltip"
-                              >Run ►
+                              >Run &#x25BA;
                               <span
                                 class="tooltip-text tooltip-text-position-bottom"
-                                >⌃+R</span
+                                >&#8679;+&#8629;</span
                               >
                             </span>
                           `}

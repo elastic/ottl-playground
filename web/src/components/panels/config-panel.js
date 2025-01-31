@@ -3,8 +3,9 @@
 import {html, LitElement} from 'lit-element';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
+import {Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
-import {indentWithTab} from '@codemirror/commands';
+import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
@@ -132,7 +133,12 @@ export class PlaygroundConfigPanel extends LitElement {
     this._editor = new EditorView({
       extensions: [
         basicSetup,
-        keymap.of([indentWithTab]),
+        Prec.highest(
+          keymap.of([
+            indentWithTab,
+            {key: 'Enter', run: insertNewlineAndIndent, shift: () => true},
+          ])
+        ),
         EditorView.lineWrapping,
         yaml(),
         EditorView.updateListener.of((v) => {
