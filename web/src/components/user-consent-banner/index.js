@@ -20,7 +20,7 @@ class PlaygroundUserConsentBanner extends LitElement {
       z-index: 2147483645;
       box-sizing: border-box;
       width: 100%;
-      background-color: #f1f6f4;
+      background-color: rgb(245, 245, 245);
       max-height: 600px;
       overflow-y: auto;
       border-top-style: outset;
@@ -30,7 +30,7 @@ class PlaygroundUserConsentBanner extends LitElement {
     .user-consent-banner-inner {
       width: 65%;
       margin: 0 auto;
-      padding: 32px;
+      padding: 10px;
     }
 
     .user-consent-banner-copy {
@@ -39,16 +39,16 @@ class PlaygroundUserConsentBanner extends LitElement {
 
     .user-consent-banner-header {
       margin-bottom: 8px;
-      font-weight: bold;
-      font-size: 16px;
-      line-height: 17px;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 15px;
     }
 
     .user-consent-banner-description {
       font-weight: normal;
       color: #838f93;
-      font-size: 14px;
-      line-height: 15px;
+      font-size: 12px;
+      line-height: 13px;
       text-align: justify;
       width: 100%;
     }
@@ -56,8 +56,8 @@ class PlaygroundUserConsentBanner extends LitElement {
     .user-consent-banner-button {
       box-sizing: border-box;
       display: inline-block;
-      min-width: 164px;
-      padding: 11px 13px;
+      min-width: 130px;
+      padding: 9px;
       border-radius: 4px;
       background-color: #0073ce;
       border: none;
@@ -106,28 +106,20 @@ class PlaygroundUserConsentBanner extends LitElement {
                       check such content before resubmitting it yourself. The
                       website only provides an execution service, and it does
                       not verify your inputs for quality, security, safety,
-                      privacy or any other purpose.
-                    </p>
-                    <p>
-                      Your inputs are only processed for the purpose of
-                      providing the execution service you request by pressing
-                      the "Run" button, and to allow you to make the actions you
-                      perform on the website repeatable and sharable by using
-                      the "Copy link" button.
-                    </p>
-                    <p>
+                      privacy or any other purpose. Your inputs are only
+                      processed for the purpose of providing the execution
+                      service you request by pressing the "Run" button, and to
+                      allow you to make the actions you perform on the website
+                      repeatable and sharable by using the "Copy link" button.
                       Submitting harmful or law-infringing inputs and/or seeking
                       to produce harmful or law-infringing outputs is strictly
                       prohibited, and this website disclaims any liability for
-                      such user actions.
-                    </p>
-                    <p>
-                      To maintain the functionality of the service and to
-                      monitor its usage for statistical web analytics purposes,
-                      this website collects basic usage telemetry data. Such
-                      telemetry is limited to network addresses and software
-                      agent identifiers. It excludes any user-identifiable
-                      personal information.
+                      such user actions. To maintain the functionality of the
+                      service and to monitor its usage for statistical web
+                      analytics purposes, this website collects basic usage
+                      telemetry data. Such telemetry is limited to network
+                      addresses and software agent identifiers. It excludes any
+                      user-identifiable personal information.
                     </p>
                     <p>
                       By using this website, you acknowledge the above terms and

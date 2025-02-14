@@ -118,11 +118,15 @@ export class PlaygroundNavBar extends LitElement {
 
         ${this.title
           ? html`
-        <div class="title">
-          <span class="text">OTTL&nbsp;Playground</span>
-          <sup class="title-beta-box" title="The OTTL Playground is still in beta and the authors of this tool would welcome your feedback">BETA</sup>
-        </div>
-        `
+              <div class="title">
+                <span class="text">OTTL&nbsp;Playground</span>
+                <sup
+                  class="title-beta-box"
+                  title="The OTTL Playground is still in beta and the authors of this tool would welcome your feedback"
+                  >BETA</sup
+                >
+              </div>
+            `
           : nothing}
 
         <slot name="custom-components"></slot>
