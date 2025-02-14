@@ -4,8 +4,6 @@ The OTTL Playground is a powerful and user-friendly tool designed to allow users
 The playground provides a rich interface for users to create, modify, and test statements in real-time, making it easier 
 to understand how different configurations impact the OTLP data transformation.
 
-![OTTL Playground overview](docs/img/playground-overview.png)
-
 ### Building
 
 **Requirements:**
