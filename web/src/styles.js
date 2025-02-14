@@ -75,7 +75,7 @@ export const globalStyles = css`
 
   .tooltip-text-position-bottom {
     width: 120px;
-    top: 100%;
+    top: 70%;
     left: 50%;
     margin-left: -60px;
   }

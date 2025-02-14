@@ -6,7 +6,7 @@ import {globalStyles} from '../styles';
 const playgroundStyle = css`
   .playground {
     height: 100%;
-    padding: 0 10px 10px 10px;
+    padding: 0 10px 0 10px;
   }
 
   .split-horizontal {

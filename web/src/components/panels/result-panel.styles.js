@@ -36,7 +36,7 @@ const resultPanelStyle = css`
 
   .result-panel-content {
     overflow: auto;
-    height: calc(100% - 77px);
+    height: 100%;
     border: #eee 1px solid;
     padding-top: 2px;
   }

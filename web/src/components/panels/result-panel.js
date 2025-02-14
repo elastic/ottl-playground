@@ -65,7 +65,7 @@ export class PlaygroundResultPanel extends LitElement {
             <div class="full-size">
                 <div class="result-panel-controls">
                     <div class="header">
-                        <span><strong>Result</strong> <sup><small>DIFF</small></sup></span>
+                        <span><strong>Result</strong></span>
                     </div>
                 </div>
                 <div>

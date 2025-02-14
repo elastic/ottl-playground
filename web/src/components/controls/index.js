@@ -21,7 +21,6 @@ export class PlaygroundControls extends LitElement {
 
   constructor() {
     super();
-    this.title = 'OTTL Playground';
     this.hideEvaluators = false;
     this.hideRunButton = false;
     this.hideCopyLinkButton = false;
@@ -51,13 +50,14 @@ export class PlaygroundControls extends LitElement {
         .playground-controls div {
           float: left;
           text-align: center;
-          margin: 10px 0 10px 0;
+          margin: 5px 0 5px 0;
           text-decoration: none;
         }
 
         .playground-controls .app-title {
           font-size: 25px;
-          padding: 15px;
+          padding: 10px;
+          font-weight: 600;
         }
 
         .playground-controls div.right {
@@ -91,6 +91,11 @@ export class PlaygroundControls extends LitElement {
 
         #evaluator {
           width: 160px;
+          height: 40px;
+        }
+
+        #version {
+          height: 40px;
         }
       `,
       globalStyles,
@@ -102,9 +107,7 @@ export class PlaygroundControls extends LitElement {
       <div class="playground-controls">
         <slot name="app-title">
           <div class="app-title">
-            <strong>
-              <slot name="app-title-text"><span>${this.title}</span></slot>
-            </strong>
+            <slot name="app-title-text"><span>${this.title}</span></slot>
           </div>
         </slot>
         <div class="right">

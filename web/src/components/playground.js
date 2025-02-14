@@ -43,7 +43,6 @@ export class Playground extends LitElement {
     this._hideEvaluators = false;
     this.hideRunButton = false;
     this.disableShareLink = false;
-    this.title = 'OTTL Playground';
     this.payload = '{}';
     this.baseUrl = '';
   }
@@ -178,11 +177,13 @@ export class Playground extends LitElement {
               name="playground-controls-app-title-text"
               slot="app-title-text"
             >
-              ${this.title}&nbsp;<sup
-                class="beta-box"
-                title="The OTTL Playground is still in beta and the authors of this tool would welcome your feedback"
-                >BETA</sup
-              >
+              ${this.title
+                ? html` ${this.title}&nbsp;<sup
+                      class="beta-box"
+                      title="The OTTL Playground is still in beta and the authors of this tool would welcome your feedback"
+                      >BETA</sup
+                    >`
+                : nothing}
             </slot>
             <slot
               name="playground-controls-custom-components"
