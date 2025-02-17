@@ -4,7 +4,7 @@ import {css} from 'lit-element';
 import {globalStyles} from '../../styles';
 
 const resultPanelStyle = css`
-  .delta-select {
+  .view-select {
     padding: 5px;
   }
 
@@ -46,7 +46,7 @@ const resultPanelStyle = css`
     margin-left: 4px;
   }
 
-  .result-panel-delta {
+  .result-panel-view {
     display: grid;
     grid-template-columns: repeat(auto-fill, 135px);
     align-items: center;

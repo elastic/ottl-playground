@@ -12,7 +12,7 @@ import {nothing} from 'lit';
 
 export class PlaygroundResultPanel extends LitElement {
   static properties = {
-    delta: {type: String},
+    view: {type: String},
     payload: {type: String},
     result: {type: Object},
     _errored: {state: true},
@@ -20,7 +20,7 @@ export class PlaygroundResultPanel extends LitElement {
 
   constructor() {
     super();
-    this.delta = 'visual';
+    this.view = 'visual_delta';
   }
 
   static get styles() {
@@ -30,7 +30,7 @@ export class PlaygroundResultPanel extends LitElement {
   updated(changedProperties) {
     if (
       changedProperties.has('result') ||
-      (changedProperties.has('delta') && changedProperties.get('delta'))
+      (changedProperties.has('view') && changedProperties.get('view'))
     ) {
       this._renderResult();
     }
@@ -69,21 +69,19 @@ export class PlaygroundResultPanel extends LitElement {
                     </div>
                 </div>
                 <div>
-                    <div class="result-panel-delta">
+                    <div class="result-panel-view">
                         <div>
-                            Delta
+                            View
                         </div>
                         <div>
-                            <select class="delta-select"
-                                    id="diff-delta-select"
-                                    .value="${this.delta}"
-                                    @change="${this._selectedDeltaChanged}">
-                                <option value="visual">Visual</option>
+                            <select class="view-select"
+                                    id="diff-view-select"
+                                    .value="${this.view}"
+                                    @change="${this._selectedViewChanged}">
+                                <option value="visual_delta">Visual delta</option>
+                                <option value="annotated_delta">Annotated delta</option>
                                 <option value="json">JSON</option>
-                                <option value="annotated_json">Annotated
-                                    JSON
-                                </option>
-                                <option value="logs">Execution Logs</option>
+                                <option value="logs">Execution logs</option>
                             </select>
                         </div>
                         <div id="show-unchanged-group" class="result-panel-flex-group">
@@ -111,14 +109,14 @@ export class PlaygroundResultPanel extends LitElement {
   }
 
   _showWrapLinesOption() {
-    return this.delta && (this.delta === 'json' || this.delta === 'logs');
+    return this.view && (this.view === 'json' || this.view === 'logs');
   }
 
-  _selectedDeltaChanged(event) {
-    this.delta = event.target.value;
+  _selectedViewChanged(event) {
+    this.view = event.target.value;
 
     this.shadowRoot.querySelector('#show-unchanged-group').style.display =
-      this.delta !== 'visual' ? 'none' : '';
+      this.view !== 'visual_delta' ? 'none' : '';
 
     this.shadowRoot.querySelector('#wrap-lines-group').style.display =
       this._showWrapLinesOption() ? '' : 'none';
@@ -167,7 +165,7 @@ export class PlaygroundResultPanel extends LitElement {
     this._resultPanel().innerHTML = '';
     this._errored = !!this.result.error;
 
-    if (this.delta === 'logs') {
+    if (this.view === 'logs') {
       this._renderExecutionLogsResult();
       return;
     }
@@ -209,7 +207,7 @@ export class PlaygroundResultPanel extends LitElement {
 
     let left = JSON.parse(this.payload);
     let right = JSON.parse(this.result.value);
-    if (this.delta === 'json') {
+    if (this.view === 'json') {
       let extensions = [basicSetup, EditorView.editable.of(false), json()];
 
       if (this._wrapLinesInput()?.checked) {
@@ -232,14 +230,39 @@ export class PlaygroundResultPanel extends LitElement {
     }
 
     // Comparable JSON results
-    const delta = jsondiffpatch.diff(left, right);
+    const delta = jsondiffpatch
+      .create({
+        objectHash: function (obj, index) {
+          // Spans
+          if (obj?.spanId && obj?.traceId) {
+            return `${obj.spanId}-${obj?.traceId}`;
+          }
+          // Metrics
+          if (
+            obj?.name &&
+            (obj?.gauge ||
+              obj?.sum ||
+              obj?.histogram ||
+              obj?.exponentialHistogram ||
+              obj?.summary)
+          ) {
+            return obj?.name;
+          }
+          // Attributes
+          if (obj?.key && obj?.value) {
+            return obj.key;
+          }
+          return '$$index:' + index;
+        },
+      })
+      .diff(left, right);
     if (!delta) {
       this._renderResultText('No changes');
       return;
     }
 
     let formatter =
-      this.delta === 'annotated_json' ? annotatedFormatter : htmlFormatter;
+      this.view === 'annotated_delta' ? annotatedFormatter : htmlFormatter;
 
     if (formatter.showUnchanged && formatter.hideUnchanged) {
       formatter.showUnchanged(
