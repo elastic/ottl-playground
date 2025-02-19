@@ -57,7 +57,7 @@ class PlaygroundUserConsentBanner extends LitElement {
       box-sizing: border-box;
       display: inline-block;
       min-width: 130px;
-      padding: 9px;
+      padding: 7px;
       border-radius: 4px;
       background-color: #0073ce;
       border: none;
@@ -66,8 +66,8 @@ class PlaygroundUserConsentBanner extends LitElement {
       text-decoration: none;
       text-align: center;
       font-weight: normal;
-      font-size: 15px;
-      line-height: 15px;
+      font-size: 13px;
+      line-height: 13px;
     }
 
     .user-consent-banner-button--secondary {
