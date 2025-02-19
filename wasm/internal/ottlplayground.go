@@ -6,14 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
 var (
-	defaultLogEncoder         = zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
 	statementsExecutors       []internal.Executor
 	statementsExecutorsLookup = map[string]internal.Executor{}
 )
@@ -48,10 +44,7 @@ func takeObservedLogs(executor internal.Executor) string {
 	all := executor.ObservedLogs().TakeAll()
 	var s strings.Builder
 	for _, entry := range all {
-		v, err := defaultLogEncoder.EncodeEntry(entry.Entry, entry.Context)
-		if err == nil {
-			s.Write(v.Bytes())
-		}
+		s.WriteString(entry.ConsoleEncodedEntry())
 	}
 	return s.String()
 }

@@ -82,7 +82,7 @@ func Test_ObservedLogs(t *testing.T) {
 	executor.settings.Logger.Sugar().Debug("this is a log")
 	logEntries := executor.ObservedLogs().TakeAll()
 	assert.Len(t, logEntries, 1)
-	assert.Equal(t, "this is a log", logEntries[0].Message)
+	assert.Contains(t, logEntries[0].ConsoleEncodedEntry(), "this is a log")
 }
 
 func readTestData(t *testing.T, file string) string {

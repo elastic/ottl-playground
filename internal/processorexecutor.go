@@ -14,21 +14,24 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"go.opentelemetry.io/collector/processor"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest/observer"
+	"go.uber.org/zap/zapcore"
 )
 
 type processorExecutor[T any] struct {
 	factory           processor.Factory
 	settings          processor.Settings
 	telemetrySettings component.TelemetrySettings
-	observedLogs      *observer.ObservedLogs
+	observedLogs      *ObservedLogs
 }
 
 func newProcessorExecutor[C any](factory processor.Factory) *processorExecutor[C] {
-	telemetrySettings := componenttest.NewNopTelemetrySettings()
-	core, observedLogs := observer.New(zap.DebugLevel)
-	telemetrySettings.Logger = zap.New(core)
+	observedLogger, observedLogs := NewLogObserver(zap.DebugLevel, zap.NewDevelopmentEncoderConfig())
+	logger, _ := zap.NewDevelopmentConfig().Build(zap.WrapCore(func(z zapcore.Core) zapcore.Core {
+		return observedLogger
+	}))
 
+	telemetrySettings := componenttest.NewNopTelemetrySettings()
+	telemetrySettings.Logger = logger
 	settings := processor.Settings{
 		ID:                component.MustNewID("ottl_playground"),
 		TelemetrySettings: telemetrySettings,
@@ -173,6 +176,6 @@ func (p *processorExecutor[C]) ExecuteMetricStatements(yamlConfig, input string)
 	return json, nil
 }
 
-func (p *processorExecutor[C]) ObservedLogs() *observer.ObservedLogs {
+func (p *processorExecutor[C]) ObservedLogs() *ObservedLogs {
 	return p.observedLogs
 }

@@ -2,10 +2,6 @@
 
 package internal
 
-import (
-	"go.uber.org/zap/zaptest/observer"
-)
-
 type Metadata struct {
 	ID      string
 	Name    string
@@ -34,7 +30,7 @@ type Executor interface {
 	// ExecuteMetricStatements is like ExecuteLogStatements, but for metrics.
 	ExecuteMetricStatements(config, input string) ([]byte, error)
 	// ObservedLogs returns the statements execution's logs
-	ObservedLogs() *observer.ObservedLogs
+	ObservedLogs() *ObservedLogs
 	// Metadata returns information about the executor
 	Metadata() Metadata
 }

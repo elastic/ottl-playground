@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zaptest/observer"
-
-	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
 
 func Test_NewErrorResult(t *testing.T) {
@@ -113,7 +111,7 @@ func Test_ExecuteStatements(t *testing.T) {
 		ottlDataPayload = "{}"
 	)
 
-	_, observedLogs := observer.New(zap.NewNop().Core())
+	_, observedLogs := internal.NewLogObserver(zap.NewNop().Core(), zap.NewDevelopmentEncoderConfig())
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			executorName := tt.name
@@ -146,7 +144,7 @@ func Test_ExecuteStatements(t *testing.T) {
 
 func Test_TakeObserved_Logs(t *testing.T) {
 	mockExecutor := new(MockExecutor)
-	core, observedLogs := observer.New(zap.DebugLevel)
+	core, observedLogs := internal.NewLogObserver(zap.DebugLevel, zap.NewDevelopmentEncoderConfig())
 	mockExecutor.On("ObservedLogs").Return(observedLogs)
 
 	logger := zap.New(core)
@@ -178,9 +176,9 @@ func (m *MockExecutor) ExecuteMetricStatements(config, payload string) ([]byte, 
 	return []byte(args.String(0)), args.Error(1)
 }
 
-func (m *MockExecutor) ObservedLogs() *observer.ObservedLogs {
+func (m *MockExecutor) ObservedLogs() *internal.ObservedLogs {
 	args := m.Called()
-	return args.Get(0).(*observer.ObservedLogs)
+	return args.Get(0).(*internal.ObservedLogs)
 }
 
 func (m *MockExecutor) Metadata() internal.Metadata {

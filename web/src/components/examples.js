@@ -38,7 +38,6 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       'log_statements:\n' +
       ' - context: log\n' +
       '   statements:\n' +
-      '    # Use Concat function to combine any number of string, separated by a delimiter. \n' +
       '    - set(attributes["combined"], Concat([attributes["string.attribute"], attributes["boolean.attribute"]], " "))',
   },
   {
