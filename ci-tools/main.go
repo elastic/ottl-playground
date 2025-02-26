@@ -1,4 +1,21 @@
-// SPDX-License-Identifier: Apache-2.0
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch B.V. licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 
 package main
 
@@ -306,7 +323,7 @@ func generateVersionsDotGoFile(version string) error {
 	}(versionsGoFile)
 
 	content := strings.Builder{}
-	content.WriteString("// SPDX-License-Identifier: Apache-2.0\n\n")
+	content.WriteString("/*\n * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one\n * or more contributor license agreements. See the NOTICE file distributed with\n * this work for additional information regarding copyright\n * ownership. Elasticsearch B.V. licenses this file to you under\n * the Apache License, Version 2.0 (the \"License\"); you may\n * not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n *\thttp://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing,\n * software distributed under the License is distributed on an\n * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n * KIND, either express or implied.  See the License for the\n * specific language governing permissions and limitations\n * under the License.\n */\n\n")
 	content.WriteString("// Code generated. DO NOT EDIT.\n\n")
 	content.WriteString("package internal\n\n")
 	content.WriteString(fmt.Sprintf("const CollectorContribProcessorsVersion = \"%s\" \n", version))
