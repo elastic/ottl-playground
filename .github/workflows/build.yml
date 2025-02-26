@@ -6,7 +6,7 @@ on:
         source_repository:
           description: 'Repository to checkout the playground code'
           required: true
-          default: 'edmocosta/ottl-playground'
+          default: 'elastic/ottl-playground'
         source_branch:
           description: 'Branch to checkout the playground code'
           required: true
@@ -28,7 +28,7 @@ on:
         source_repository:
           type: string
           required: true
-          default: 'edmocosta/ottl-playground'
+          default: 'elastic/ottl-playground'
         source_branch:
           type: string
           required: true
