@@ -58,8 +58,12 @@ register-version:
 build-web:
 	cd web; npm install; npm run build
 
+.PHONY: update-wasm-exec
+update-wasm-exec:
+	cp "$(shell go env GOROOT)/lib/wasm/wasm_exec.js" web/src/wasm_exec.js
+
 .PHONY: build
-build: build-web build-wasm register-version
+build: update-wasm-exec build-web build-wasm register-version
 
 .PHONY: fmt
 fmt:

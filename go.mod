@@ -2,8 +2,6 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplaygro
 
 go 1.23.0
 
-toolchain go1.24.0
-
 require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.120.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.120.1
