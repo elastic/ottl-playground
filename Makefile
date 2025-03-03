@@ -60,7 +60,7 @@ build-web:
 
 .PHONY: update-wasm-exec
 update-wasm-exec:
-	cp "$(shell go env GOROOT)/misc/wasm/wasm_exec.js" web/src/wasm_exec.js || cp "$(shell go env GOROOT)/lib/wasm/wasm_exec.js" web/src/wasm_exec.js
+	cp "$(shell go env GOROOT)/misc/wasm/wasm_exec.js" web/src/wasm_exec.js || cp "$(shell go env GOROOT)/lib/wasm/wasm_exec.js" web/src/wasm_exec.js || true
 
 .PHONY: build
 build: update-wasm-exec build-web build-wasm register-version
