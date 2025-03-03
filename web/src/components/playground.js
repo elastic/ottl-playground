@@ -366,11 +366,8 @@ export class Playground extends LitElement {
   _handleConfigExampleChanged(event) {
     let example = event.detail.value;
     if (example) {
-      this.payload = JSON.stringify(
-        JSON.parse(PAYLOAD_EXAMPLES[example.otlp_type]),
-        null,
-        2
-      );
+      let payload = example.payload || PAYLOAD_EXAMPLES[example.otlp_type];
+      this.payload = JSON.stringify(JSON.parse(payload), null, 2);
       this._setSelectedPayloadExample(example.otlp_type);
     }
   }
