@@ -18,7 +18,7 @@
  */
 
 export const PAYLOAD_EXAMPLES = {
-  logs: '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"Example log record"},"attributes":[{"key":"string.attribute","value":{"stringValue":"some string"}},{"key":"boolean.attribute","value":{"boolValue":true}},{"key":"int.attribute","value":{"intValue":"10"}},{"key":"double.attribute","value":{"doubleValue":637.704}},{"key":"array.attribute","value":{"arrayValue":{"values":[{"stringValue":"many"},{"stringValue":"values"}]}}},{"key":"map.attribute","value":{"kvlistValue":{"values":[{"key":"some.map.key","value":{"stringValue":"some value"}}]}}},{"key":"jsonString.attribute","value":{"stringValue":"{\\"object\\":{\\"level\\":\\"INFO\\",\\"log\\":\\"Elapsed time: 10ms\\"}}"}}]}]}]}]}',
+  logs: '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"Example log record"},"attributes":[{"key":"string.attribute","value":{"stringValue":"some string"}},{"key":"boolean.attribute","value":{"boolValue":true}},{"key":"int.attribute","value":{"intValue":"10"}},{"key":"double.attribute","value":{"doubleValue":637.704}},{"key":"array.attribute","value":{"arrayValue":{"values":[{"stringValue":"many"},{"stringValue":"values"}]}}},{"key":"map.attribute","value":{"kvlistValue":{"values":[{"key":"some.map.key","value":{"stringValue":"some value"}}]}}}]}]}]}]}',
   traces:
     '{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeSpans":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"spans":[{"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","parentSpanId":"eee19b7ec3c1b173","name":"I\'m a server span","startTimeUnixNano":"1544712660000000000","endTimeUnixNano":"1544712661000000000","kind":2,"attributes":[{"key":"my.span.attr","value":{"stringValue":"some value"}}],"status":{}},{"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b173","parentSpanId":"eee19b7ec3c1b173","name":"Me too","startTimeUnixNano":"1544712660000000000","endTimeUnixNano":"1544712661000000000","kind":1,"attributes":[{"key":"my.span.attr","value":{"stringValue":"some value"}}],"status":{}}]}]}]}',
   metrics:
@@ -83,7 +83,7 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       'trace_statements:\n' +
       ' - context: span\n' +
       '   statements:\n' +
-      '    - set(attributes["server"], true) where kind == 2',
+      '    - set(attributes["server"], true) where kind == SPAN_KIND_SERVER',
   },
   {
     name: 'Update a resource attribute',
@@ -101,8 +101,11 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       'log_statements:\n' +
       ' - context: log\n' +
       '   statements:\n' +
-      '    - merge_maps(cache, ParseJSON(attributes["jsonString.attribute"])["object"], "upsert")\n' +
-      '    - set(body, cache["log"])',
+      '    - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\\\{")\n' +
+      '    - set(severity_text, cache["level"])\n' +
+      '    - set(body, cache["message"])',
+    payload:
+      '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"{\\"level\\":\\"INFO\\",\\"message\\":\\"Elapsed time: 10ms\\"}"}}]}]}]}',
   },
   {
     name: 'Parse and manipulate Timestamps',
@@ -163,28 +166,39 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
 
 const FILTER_PROCESSOR_CONFIG_EXAMPLES = [
   {
-    name: 'Dropping specific metric and value',
+    name: 'Drop specific metric and value',
     otlp_type: 'metrics',
     config:
-      'error_mode: ignore\n' +
       'metrics:\n' +
       '  datapoint:\n' +
       '    - metric.name == "my.histogram" and count == 2',
   },
   {
-    name: 'Dropping spans',
-    otlp_type: 'traces',
-    config:
-      'error_mode: ignore\n' + 'traces:\n' + '  span:\n' + '    - kind == 1',
-  },
-  {
-    name: 'Dropping data by resource attribute',
+    name: 'Drop spans',
     otlp_type: 'traces',
     config:
       'error_mode: ignore\n' +
       'traces:\n' +
       '  span:\n' +
+      '    - kind == SPAN_KIND_INTERNAL',
+  },
+  {
+    name: 'Drop data by resource attribute',
+    otlp_type: 'traces',
+    config:
+      'traces:\n' +
+      '  span:\n' +
       '    - IsMatch(resource.attributes["service.name"], "my-*")',
+  },
+  {
+    name: 'Drop debug and trace logs',
+    otlp_type: 'logs',
+    config:
+      'logs:\n' +
+      '  log_record:\n' +
+      '    - severity_number != SEVERITY_NUMBER_UNSPECIFIED and severity_number < SEVERITY_NUMBER_INFO',
+    payload:
+      '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I\'m an INFO log record"}},{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":5,"severityText":"Debug","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I\'m a DEBUG log record"}}]}]}]}',
   },
 ];
 
