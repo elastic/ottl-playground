@@ -153,15 +153,6 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       '     - copy_metric(name="my.second.histogram") where name == "my.histogram"\n' +
       '     - aggregate_on_attributes("sum", []) where name == "my.second.histogram"',
   },
-  {
-    name: 'Restructure metrics payload',
-    otlp_type: 'metrics',
-    config:
-      'metric_statements:\n' +
-      ' - context: datapoint\n' +
-      '   statements:\n' +
-      '     - merge_maps(resource.attributes, attributes, "upsert") where metric.name == "my.counter"',
-  },
 ];
 
 const FILTER_PROCESSOR_CONFIG_EXAMPLES = [

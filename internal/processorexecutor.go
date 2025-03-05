@@ -50,7 +50,7 @@ func newProcessorExecutor[C any](factory processor.Factory) *processorExecutor[C
 	telemetrySettings := componenttest.NewNopTelemetrySettings()
 	telemetrySettings.Logger = logger
 	settings := processor.Settings{
-		ID:                component.MustNewID("ottl_playground"),
+		ID:                component.MustNewIDWithName(factory.Type().String(), "ottl_playground"),
 		TelemetrySettings: telemetrySettings,
 	}
 
