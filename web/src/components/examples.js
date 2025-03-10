@@ -102,10 +102,11 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       ' - context: log\n' +
       '   statements:\n' +
       '    - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\\\{")\n' +
+      '    - set(time, Time(cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))\n'+
       '    - set(severity_text, cache["level"])\n' +
       '    - set(body, cache["message"])',
     payload:
-      '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"{\\"level\\":\\"INFO\\",\\"message\\":\\"Elapsed time: 10ms\\"}"}}]}]}]}',
+      '{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"{\\"timestamp\\": \\"2025-03-01T12:12:14Z\\", \\"level\\":\\"INFO\\",\\"message\\":\\"Elapsed time: 10ms\\"}"}}]}]}]}',
   },
   {
     name: 'Parse and manipulate Timestamps',
