@@ -142,7 +142,7 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       'metric_statements:\n' +
       ' - context: metric\n' +
       '   statements:\n' +
-      '     - replace_pattern(name, "my.(.+)", "metrics.$1")',
+      '     - replace_pattern(name, "my.(.+)", "metrics.$$1")',
   },
   {
     name: 'Aggregate a metric',
