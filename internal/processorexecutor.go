@@ -21,6 +21,7 @@ package internal
 
 import (
 	"context"
+	"strings"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -68,18 +69,44 @@ func (p *processorExecutor[C]) parseConfig(yamlConfig string) (*C, error) {
 		return nil, err
 	}
 
-	yamlConfigMap, err := deserializedYaml.AsConf()
+	deserializedConf, err := deserializedYaml.AsConf()
 	if err != nil {
 		return nil, err
 	}
 
+	configMap := make(map[string]any)
+	for k, v := range deserializedConf.ToStringMap() {
+		configMap[k] = escapeDollarSigns(v)
+	}
+
 	defaultConfig := p.factory.CreateDefaultConfig().(*C)
-	err = yamlConfigMap.Unmarshal(&defaultConfig)
+	err = confmap.NewFromStringMap(configMap).Unmarshal(&defaultConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return defaultConfig, nil
+}
+
+func escapeDollarSigns(val any) any {
+	switch v := val.(type) {
+	case string:
+		return strings.ReplaceAll(v, "$$", "$")
+	case []any:
+		escapedVals := make([]any, len(v))
+		for i, x := range v {
+			escapedVals[i] = escapeDollarSigns(x)
+		}
+		return escapedVals
+	case map[string]any:
+		escapedMap := make(map[string]any, len(v))
+		for k, x := range v {
+			escapedMap[k] = escapeDollarSigns(x)
+		}
+		return escapedMap
+	default:
+		return val
+	}
 }
 
 func (p *processorExecutor[C]) ExecuteLogStatements(yamlConfig, input string) ([]byte, error) {
