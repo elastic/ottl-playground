@@ -95,8 +95,8 @@ export class PlaygroundResultPanel extends LitElement {
                                     id="diff-view-select"
                                     .value="${this.view}"
                                     @change="${this._selectedViewChanged}">
-                                <option value="visual_delta">Visual delta</option>
-                                <option value="annotated_delta">Annotated delta</option>
+                                <option value="visual_delta">Visual diff</option>
+                                <option value="annotated_delta">Annotated diff</option>
                                 <option value="json">JSON</option>
                                 <option value="logs">Execution logs</option>
                             </select>
