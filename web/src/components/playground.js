@@ -126,6 +126,7 @@ export class Playground extends LitElement {
         return response.json();
       })
       .then((json) => {
+        this.version = this.version || json.versions?.[0]?.version;
         this._versions = json.versions;
       });
   }
