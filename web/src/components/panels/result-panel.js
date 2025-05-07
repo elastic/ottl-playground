@@ -85,7 +85,7 @@ export class PlaygroundResultPanel extends LitElement {
                         <span><strong>Result</strong></span>
                     </div>
                           ${
-                            this.result?.executionTime
+                            this.result?.executionTime !== undefined
                               ? html`
                                   <div
                                     class="execution-time-header"
