@@ -84,6 +84,22 @@ export class PlaygroundResultPanel extends LitElement {
                     <div class="header">
                         <span><strong>Result</strong></span>
                     </div>
+                          ${
+                            this.result?.executionTime
+                              ? html`
+                                  <div
+                                    class="execution-time-header"
+                                    title="Execution time"
+                                  >
+                                    <span>
+                                      <span
+                                        >${this.result?.executionTime} ms</span
+                                      >
+                                    </span>
+                                  </div>
+                                `
+                              : nothing
+                          }
                 </div>
                 <div>
                     <div class="result-panel-view">
