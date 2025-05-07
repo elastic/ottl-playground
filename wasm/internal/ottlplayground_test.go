@@ -34,9 +34,10 @@ func Test_NewErrorResult(t *testing.T) {
 	logs := "execution logs"
 	err := "error"
 	expected := map[string]any{
-		"value": "",
-		"logs":  logs,
-		"error": err,
+		"value":         "",
+		"logs":          logs,
+		"error":         err,
+		"executionTime": int64(0),
 	}
 
 	result := NewErrorResult(err, logs)
@@ -50,14 +51,11 @@ func Test_ExecuteStatements_UnsupportedExecutor(t *testing.T) {
 	executorName := "unsupported_processor"
 
 	expectedError := fmt.Sprintf("unsupported evaluator %s", executorName)
-	expected := map[string]any{
-		"value": "",
-		"logs":  "",
-		"error": expectedError,
-	}
-
 	result := ExecuteStatements(config, otlpDataType, otlpDataPayload, executorName)
-	assert.Equal(t, expected, result)
+	assert.Equal(t, "", result["value"])
+	assert.Equal(t, "", result["logs"])
+	assert.Equal(t, expectedError, result["error"])
+	assert.GreaterOrEqual(t, result["executionTime"], int64(0))
 }
 
 func Test_ExecuteStatements_UnsupportedOTLPType(t *testing.T) {
@@ -67,14 +65,12 @@ func Test_ExecuteStatements_UnsupportedOTLPType(t *testing.T) {
 	executorName := "transform_processor"
 
 	expectedError := fmt.Sprintf("unsupported OTLP data type %s", otlpDataType)
-	expected := map[string]any{
-		"value": "",
-		"logs":  "",
-		"error": expectedError,
-	}
 
 	result := ExecuteStatements(config, otlpDataType, otlpDataPayload, executorName)
-	assert.Equal(t, expected, result)
+	assert.Equal(t, "", result["value"])
+	assert.Equal(t, "", result["logs"])
+	assert.Equal(t, expectedError, result["error"])
+	assert.GreaterOrEqual(t, result["executionTime"], int64(0))
 }
 
 func Test_ExecuteStatements(t *testing.T) {
@@ -149,9 +145,11 @@ func Test_ExecuteStatements(t *testing.T) {
 				assert.Empty(t, result["value"])
 				expectedErrorMsg := fmt.Sprintf("unable to run %s statements. Error: %v", tt.otlpDataType, tt.expectedError)
 				assert.Contains(t, result["error"], expectedErrorMsg)
+				assert.Equal(t, result["executionTime"], int64(0))
 			} else {
 				assert.Equal(t, tt.expectedOutput, result["value"])
 				assert.NotContains(t, result, "error")
+				assert.GreaterOrEqual(t, result["executionTime"], int64(0))
 			}
 
 			mockExecutor.AssertExpectations(t)

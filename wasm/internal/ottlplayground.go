@@ -22,6 +22,7 @@ package internal
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
@@ -42,10 +43,11 @@ func registerStatementsExecutor(executor internal.Executor) {
 	statementsExecutorsLookup[executor.Metadata().ID] = executor
 }
 
-func newResult(json string, err string, logs string) map[string]any {
+func newResult(json string, err string, logs string, executionTime int64) map[string]any {
 	v := map[string]any{
-		"value": json,
-		"logs":  logs,
+		"value":         json,
+		"logs":          logs,
+		"executionTime": executionTime,
 	}
 	if err != "" {
 		v["error"] = err
@@ -54,7 +56,7 @@ func newResult(json string, err string, logs string) map[string]any {
 }
 
 func NewErrorResult(err string, logs string) map[string]any {
-	return newResult("", err, logs)
+	return newResult("", err, logs, 0)
 }
 
 func takeObservedLogs(executor internal.Executor) string {
@@ -72,6 +74,7 @@ func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName strin
 		return NewErrorResult(fmt.Sprintf("unsupported evaluator %s", executorName), "")
 	}
 
+	start := time.Now()
 	var output []byte
 	var err error
 	switch ottlDataType {
@@ -89,7 +92,8 @@ func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName strin
 		return NewErrorResult(fmt.Sprintf("unable to run %s statements. Error: %v", ottlDataType, err), takeObservedLogs(executor))
 	}
 
-	return newResult(string(output), "", takeObservedLogs(executor))
+	executionTime := time.Since(start).Milliseconds()
+	return newResult(string(output), "", takeObservedLogs(executor), executionTime)
 }
 
 func StatementsExecutors() []any {

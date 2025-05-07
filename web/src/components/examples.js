@@ -102,7 +102,7 @@ const TRANSFORM_PROCESSOR_CONFIG_EXAMPLES = [
       ' - context: log\n' +
       '   statements:\n' +
       '    - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\\\{")\n' +
-      '    - set(time, Time(cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))\n'+
+      '    - set(time, Time(cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))\n' +
       '    - set(severity_text, cache["level"])\n' +
       '    - set(body, cache["message"])',
     payload:

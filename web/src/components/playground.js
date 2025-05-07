@@ -103,9 +103,9 @@ export class Playground extends LitElement {
 
   _initState() {
     let urlStateData = this._loadURLBase64DataHash();
-    let version = urlStateData?.version
-    if (!version || !this._versions?.some(it => it.version === version)) {
-        version = this._versions?.[0]?.version;
+    let version = urlStateData?.version;
+    if (!version || !this._versions?.some((it) => it.version === version)) {
+      version = this._versions?.[0]?.version;
     }
 
     if (urlStateData) {

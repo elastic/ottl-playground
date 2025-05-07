@@ -51,6 +51,13 @@ const resultPanelStyle = css`
     }
   }
 
+  .result-panel-controls .execution-time-header {
+    float: right;
+    font-size: 12px;
+    color: gray;
+    cursor: default;
+  }
+
   .result-panel-content {
     overflow: auto;
     height: calc(100% - 74px);
