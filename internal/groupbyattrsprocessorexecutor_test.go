@@ -38,7 +38,6 @@ func Test_GroupByAttrsProcessorExecutor_ParseConfig(t *testing.T) {
 
 	executor := NewGroupByAttrsProcessorExecutor().(*groupByAttrsProcessorExecutor)
 	assert.NotNil(t, executor)
-
 	parsedConfig, err := executor.parseConfig(string(yamlConfig))
 	require.NoError(t, err)
 	require.NotNil(t, parsedConfig)
