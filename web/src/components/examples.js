@@ -194,6 +194,16 @@ const FILTER_PROCESSOR_CONFIG_EXAMPLES = [
   },
 ];
 
+const GROUP_BY_ATTRS_PROCESSOR_CONFIG_EXAMPLES = [
+  {
+    name: 'Move common span attribute to resource',
+    otlp_type: 'traces',
+    config:
+      'keys:\n' +
+      '  - my.span.attr',
+  },
+];
+
 const sortBy = (property) => {
   return function (a, b) {
     return a[property] < b[property] ? -1 : a[property] > b[property] ? 1 : 0;
@@ -203,4 +213,5 @@ const sortBy = (property) => {
 export const CONFIG_EXAMPLES = {
   transform_processor: TRANSFORM_PROCESSOR_CONFIG_EXAMPLES.sort(sortBy('name')),
   filter_processor: FILTER_PROCESSOR_CONFIG_EXAMPLES.sort(sortBy('name')),
+  group_by_attrs_processor: GROUP_BY_ATTRS_PROCESSOR_CONFIG_EXAMPLES.sort(sortBy('name')),
 };
