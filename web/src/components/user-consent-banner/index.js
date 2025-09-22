@@ -26,7 +26,8 @@ class PlaygroundUserConsentBanner extends LitElement {
 
   constructor() {
     super();
-    this._hasUserConsent = this._getCookie('userConsent');
+    let isEmbedded = window.self !== window.top;
+    this._hasUserConsent = isEmbedded || this._getCookie('userConsent');
   }
 
   static styles = css`
