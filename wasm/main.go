@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"syscall/js"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/wasm/internal"
+	"github.com/elastic/ottl-playground/wasm/internal"
 )
 
 func handlePanic() {

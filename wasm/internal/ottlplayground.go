@@ -25,7 +25,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
+	"github.com/elastic/ottl-playground/internal"
 )
 
 var (

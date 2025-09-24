@@ -21,4 +21,4 @@
 
 package internal
 
-const CollectorContribProcessorsVersion = "v0.127.0"
+const CollectorContribProcessorsVersion = "v0.135.0"
