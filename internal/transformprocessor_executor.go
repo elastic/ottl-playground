@@ -1,0 +1,159 @@
+/*
+ * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
+ * or more contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright
+ * ownership. Elasticsearch B.V. licenses this file to you under
+ * the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *	http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package internal
+
+import (
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+)
+
+var transformProcessorConfigExamples = []ConfigExample{
+	{
+		Name:   "Rename an attribute",
+		Signal: "traces",
+		Config: "error_mode: ignore\n" +
+			"trace_statements:\n" +
+			" - context: resource\n" +
+			"   statements:\n" +
+			`    - set(attributes["service.new_name"], attributes["service.name"])` + "\n" +
+			`    - delete_key(attributes, "service.name")`,
+	},
+	{
+		Name:   "Copy field to attributes",
+		Signal: "logs",
+		Config: "error_mode: ignore\n" +
+			"log_statements:\n" +
+			" - context: log\n" +
+			"   statements:\n" +
+			`    - set(attributes["body"], body)`,
+	},
+	{
+		Name:   "Combine two attributes",
+		Signal: "logs",
+		Config: "error_mode: ignore\n" +
+			"log_statements:\n" +
+			" - context: log\n" +
+			"   statements:\n" +
+			`    - set(attributes["combined"], Concat([attributes["string.attribute"], attributes["boolean.attribute"]], " "))`,
+	},
+	{
+		Name:   "Set a field",
+		Signal: "logs",
+		Config: "log_statements:\n" +
+			" - context: log\n" +
+			"   statements:\n" +
+			"    - set(severity_number, SEVERITY_NUMBER_INFO)\n" +
+			`    - set(severity_text, "INFO")`,
+	},
+	{
+		Name:   "Parse unstructured log",
+		Signal: "logs",
+		Config: "log_statements:\n" +
+			" - context: log\n" +
+			"   statements:\n" +
+			`    - 'merge_maps(attributes, ExtractPatterns(body, "Example (?P<example_type>[a-z\\.]+)"), "upsert")'`,
+	},
+	{
+		Name:   "Conditionally set a field",
+		Signal: "traces",
+		Config: "trace_statements:\n" +
+			" - context: span\n" +
+			"   statements:\n" +
+			`    - set(attributes["server"], true) where kind == SPAN_KIND_SERVER`,
+	},
+	{
+		Name:   "Update a resource attribute",
+		Signal: "logs",
+		Config: "log_statements:\n" +
+			" - context: resource\n" +
+			"   statements:\n" +
+			`    - set(attributes["service.name"], "mycompany-application") `,
+	},
+	{
+		Name:   "Parse and manipulate JSON",
+		Signal: "logs",
+		Config: "log_statements:\n" +
+			" - context: log\n" +
+			"   statements:\n" +
+			`    - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")` + "\n" +
+			`    - set(time, Time(cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))` + "\n" +
+			`    - set(severity_text, cache["level"])` + "\n" +
+			`    - set(body, cache["message"])`,
+		Payload: `{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"{\"timestamp\": \"2025-03-01T12:12:14Z\", \"level\":\"INFO\",\"message\":\"Elapsed time: 10ms\"}"}}]}]}]}`,
+	},
+	{
+		Name:   "Parse and manipulate Timestamps",
+		Signal: "metrics",
+		Config: "metric_statements:\n" +
+			" - context: resource\n" +
+			"   statements:\n" +
+			`    - set(attributes["date"], String(TruncateTime(Time(attributes["timestamp"], "%Y-%m-%dT%H:%M:%SZ"), Duration("24h"))))`,
+	},
+	{
+		Name:   "Manipulate strings",
+		Signal: "metrics",
+		Config: "metric_statements:\n" +
+			" - context: scope\n" +
+			"   statements:\n" +
+			`    - set(resource.attributes["service.name"], ConvertCase(Concat([resource.attributes["service.name"], version], ".v"), "upper"))`,
+	},
+	{
+		Name:   "Scale a metric",
+		Signal: "metrics",
+		Config: "metric_statements:\n" +
+			" - context: metric\n" +
+			"   statements:\n" +
+			`    - scale_metric(10.0, "kWh") where name == "my.gauge"`,
+	},
+	{
+		Name:   "Dynamically rename a metric",
+		Signal: "metrics",
+		Config: "metric_statements:\n" +
+			" - context: metric\n" +
+			"   statements:\n" +
+			`     - replace_pattern(name, "my.(.+)", "metrics.$$1")`,
+	},
+	{
+		Name:   "Aggregate a metric",
+		Signal: "metrics",
+		Config: "metric_statements:\n" +
+			" - context: metric\n" +
+			"   statements:\n" +
+			`     - copy_metric(name="my.second.histogram") where name == "my.histogram"` + "\n" +
+			`     - aggregate_on_attributes("sum", []) where name == "my.second.histogram"`,
+	},
+}
+
+// NewTransformProcessorExecutor creates an internal.Executor that runs OTTL statements using
+// the [transformprocessor].
+func NewTransformProcessorExecutor() Executor {
+	debugger := NewTransformProcessorDebugger()
+	return NewJSONExecutor[transformprocessor.Config](
+		newProcessorConsumer[transformprocessor.Config](transformprocessor.NewFactory()),
+		newMetadata(
+			ComponentTypeProcessor,
+			"transform_processor",
+			"Transform",
+			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
+			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
+			withConfigExamples(transformProcessorConfigExamples...),
+		),
+		withDebugger[transformprocessor.Config](debugger),
+	)
+}

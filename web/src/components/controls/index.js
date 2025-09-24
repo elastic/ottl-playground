@@ -26,11 +26,11 @@ import './copy-link-button';
 export class PlaygroundControls extends LitElement {
   static properties = {
     title: {type: String},
-    evaluator: {type: String},
-    evaluators: {type: Object},
+    executor: {type: String},
+    executors: {type: Object},
     version: {type: String},
     versions: {type: Object},
-    hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
+    hideExecutors: {type: Boolean, attribute: 'hide-executors'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
     hideCopyLinkButton: {type: Boolean, attribute: 'hide-copy-link-button'},
     loading: {type: Boolean},
@@ -38,16 +38,12 @@ export class PlaygroundControls extends LitElement {
 
   constructor() {
     super();
-    this.hideEvaluators = false;
+    this.hideExecutors = false;
     this.hideRunButton = false;
     this.hideCopyLinkButton = false;
     this.loading = false;
-    this.evaluator = 'transform_processor';
+    this.executor = 'transform_processor';
     this.versions = [{version: '-', artifact: 'ottlplayground.wasm'}];
-    this.evaluators = [
-      {id: 'transform_processor', name: 'Transform processor'},
-      {id: 'filter_processor', name: 'Filter processor'},
-    ];
 
     window.addEventListener('keydown', (event) => {
       if (event.shiftKey && event.key === 'Enter') {
@@ -106,8 +102,8 @@ export class PlaygroundControls extends LitElement {
           background-color: #3e8e41;
         }
 
-        #evaluator {
-          width: 160px;
+        #executor {
+          width: 180px;
           height: 40px;
         }
 
@@ -128,10 +124,10 @@ export class PlaygroundControls extends LitElement {
           </div>
         </slot>
         <div class="right">
-          ${this.hideEvaluators
+          ${this.hideExecutors
             ? nothing
             : html`
-                <div class="evaluator-container">
+                <div class="executor-container">
                   <select
                     id="version"
                     ?disabled="${this.loading}"
@@ -157,26 +153,35 @@ export class PlaygroundControls extends LitElement {
                     </optgroup>
                   </select>
                 </div>
-                <div class="evaluator-container">
+                <div class="executor-container">
                   <select
-                    id="evaluator"
+                    id="executor"
                     ?disabled="${this.loading}"
-                    name="evaluator"
-                    @change="${this._notifyEvaluatorChanged}"
-                    title="Evaluator"
+                    name="executor"
+                    @change="${this._notifyExecutorChanged}"
+                    title="Executor"
                   >
-                    ${this.evaluators &&
+                    ${this.executors &&
                     repeat(
-                      this.evaluators,
-                      (it) => it.id,
-                      (it) => {
-                        return html` <option
-                          title="${it.name} (${it.version})"
-                          ?selected="${it.id === this.evaluator}"
-                          value="${it.id}"
-                        >
-                          ${it.name}
-                        </option>`;
+                      Object.entries(this._groupedExecutors()),
+                      ([group]) => group,
+                      ([group, executors]) => {
+                        return html`<optgroup label="${group}">
+                          ${repeat(
+                            executors,
+                            (it) => it.id,
+                            (it) => {
+                              return html` <option
+                                title="${it.name} ${it.type} (${it.version})"
+                                ?selected="${it.id === this.executor}"
+                                value="${it.id}"
+                              >
+                                ${it.name}
+                                ${it.id === this.executor ? it.type : ''}
+                              </option>`;
+                            }
+                          )}
+                        </optgroup>`;
                       }
                     )}
                   </select>
@@ -224,6 +229,19 @@ export class PlaygroundControls extends LitElement {
     `;
   }
 
+  _groupedExecutors() {
+    const grouped = {};
+    this.executors?.forEach((executor) => {
+      let groupName =
+        executor.type.charAt(0).toUpperCase() + executor.type.slice(1);
+      if (!grouped[groupName]) {
+        grouped[groupName] = [];
+      }
+      grouped[groupName].push(executor);
+    });
+    return grouped;
+  }
+
   _notifyRunRequested() {
     this.dispatchEvent(
       new Event('playground-run-requested', {bubbles: true, composed: true})
@@ -241,8 +259,8 @@ export class PlaygroundControls extends LitElement {
     this.dispatchEvent(event);
   }
 
-  _notifyEvaluatorChanged(e) {
-    const event = new CustomEvent('evaluator-changed', {
+  _notifyExecutorChanged(e) {
+    const event = new CustomEvent('executor-changed', {
       detail: {
         value: e.target.value,
       },

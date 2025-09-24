@@ -1,13 +1,12 @@
 trace_statements:
   - context: resource
     statements:
-      - set(attributes["service.new_name"], attributes["service.name"])
-      - delete_key(attributes, "service.name")
+      - set(attributes["trace_statements"], true)
 log_statements:
-  - context: log
+  - context: resource
     statements:
-      - set(attributes["body"], body)
+      - set(attributes["log_statements"], true)
 metric_statements:
   - context: resource
     statements:
-      - set(attributes["foo"], "bar")
+      - set(attributes["metric_statements"], true)

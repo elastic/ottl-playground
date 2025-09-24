@@ -25,23 +25,57 @@ import * as jsondiffpatch from 'jsondiffpatch';
 import * as annotatedFormatter from 'jsondiffpatch/formatters/annotated';
 import {resultPanelStyles} from './result-panel.styles.js';
 import {escapeHTML} from '../utils/escape-html';
+import {repeat} from 'lit/directives/repeat.js';
 import {nothing} from 'lit';
+import {Compartment} from '@codemirror/state';
+
+const VIEW_VISUAL_DELTA = 'visual_delta';
+const VIEW_ANNOTATED_DELTA = 'annotated_delta';
+const VIEW_JSON = 'json';
+const VIEW_LOGS = 'logs';
 
 export class PlaygroundResultPanel extends LitElement {
   static properties = {
     view: {type: String},
+    viewConfig: {type: Object, attribute: 'view-config'},
     payload: {type: String},
     result: {type: Object},
+
+    _wrapLines: {state: true},
+    _showUnchanged: {state: true},
     _errored: {state: true},
+    _views: {state: true},
   };
 
   constructor() {
     super();
-    this.view = 'visual_delta';
+    this.view = VIEW_VISUAL_DELTA;
+    this.viewConfig = {
+      [VIEW_VISUAL_DELTA]: {enabled: true},
+      [VIEW_ANNOTATED_DELTA]: {enabled: true},
+      [VIEW_JSON]: {enabled: true},
+      [VIEW_LOGS]: {enabled: true},
+    };
+    this._wrapLines = false;
+    this._showUnchanged = false;
+    this._jsonViewEditor = null;
+    this._logsViewEditor = null;
+    this._wrapLinesCompartment = new Compartment();
+    this._updateResultViewSelect();
   }
 
   static get styles() {
     return resultPanelStyles;
+  }
+
+  willUpdate(changedProperties) {
+    if (
+      changedProperties.has('viewConfig') &&
+      changedProperties.get('viewConfig')
+    ) {
+      this._updateResultViewSelect();
+    }
+    super.willUpdate(changedProperties);
   }
 
   updated(changedProperties) {
@@ -49,15 +83,10 @@ export class PlaygroundResultPanel extends LitElement {
       changedProperties.has('result') ||
       (changedProperties.has('view') && changedProperties.get('view'))
     ) {
-      this._renderResult();
+      let rerender = this._isReRender(changedProperties);
+      this._renderResult(rerender);
     }
     super.updated(changedProperties);
-  }
-
-  showResult(payload, result) {
-    this.payload = payload;
-    this.result = result;
-    this._renderResult(payload, result);
   }
 
   showErrorMessage(message) {
@@ -66,118 +95,144 @@ export class PlaygroundResultPanel extends LitElement {
     this._renderResultText(message);
   }
 
+  clearResult() {
+    this.result = null;
+    this._errored = false;
+    this._resultPanel().innerHTML = '';
+    return this.updateComplete;
+  }
+
   render() {
     return html`
-            ${
-              this._errored
-                ? html`
-                    <style>
-                      .result-panel-controls {
-                        border-left: red 4px solid !important;
-                      }
-                    </style>
-                  `
-                : nothing
-            }
-            <div class="full-size">
-                <div class="result-panel-controls">
-                    <div class="header">
-                        <span><strong>Result</strong></span>
-                    </div>
-                          ${
-                            this.result?.executionTime !== undefined
-                              ? html`
-                                  <div
-                                    class="execution-time-header"
-                                    title="Execution time"
-                                  >
-                                    <span>
-                                      <span
-                                        >${this.result?.executionTime} ms</span
-                                      >
-                                    </span>
-                                  </div>
-                                `
-                              : nothing
-                          }
+      ${this._errored
+        ? html`
+            <style>
+              .result-panel-controls {
+                border-left: red 4px solid !important;
+              }
+            </style>
+          `
+        : nothing}
+      <div class="full-size">
+        <div class="result-panel-controls">
+          <div class="header">
+            <span><strong>Result</strong></span>
+          </div>
+          ${this.result?.executionTime !== undefined
+            ? html`
+                <div class="execution-time-header" title="Estimated execution time">
+                  <span>
+                    <span>${this.result?.executionTime} ms</span>
+                  </span>
                 </div>
-                <div>
-                    <div class="result-panel-view">
-                        <div>
-                            View
-                        </div>
-                        <div>
-                            <select class="view-select"
-                                    id="diff-view-select"
-                                    .value="${this.view}"
-                                    @change="${this._selectedViewChanged}">
-                                <option value="visual_delta">Visual diff</option>
-                                <option value="annotated_delta">Annotated diff</option>
-                                <option value="json">JSON</option>
-                                <option value="logs">Execution logs</option>
-                            </select>
-                        </div>
+              `
+            : nothing}
+        </div>
+        <div>
+          <div class="result-panel-view">
+            <div>View</div>
+            <div>
+              <select
+                class="view-select"
+                id="diff-view-select"
+                .value="${this.view}"
+                @change="${this._selectedViewChanged}"
+              >
+                ${this._views &&
+                repeat(
+                  this._views,
+                  (it) => it.id,
+                  (it) => {
+                    return html` <option
+                      title="${it.name}"
+                      ?selected="${it.id === this.view}"
+                      value="${it.id}"
+                    >
+                      ${it.name}
+                    </option>`;
+                  }
+                )}
+              </select>
+            </div>
+            ${this.view === VIEW_VISUAL_DELTA
+              ? html`
                         <div id="show-unchanged-group" class="result-panel-flex-group">
-                            <input id="show-unchanged-input" type="checkbox"
+                            <input id="show-unchanged-input" type="checkbox" ?checked="${this._showUnchanged}"
                                    @change="${this._showUnchangedInputChanged}">
                             <div @click="${this._showUnchangedInputChanged}">
                                 Show unchanged
                             </div>
                             </input>
-                        </div>
-                        <div id="wrap-lines-group" class="result-panel-flex-group" style="display: none">
-                          <input id="wrap-lines-input" type="checkbox"
+                        </div>`
+              : nothing}
+            ${this._showWrapLinesOption()
+              ? html`
+                        <div id="wrap-lines-group" class="result-panel-flex-group">
+                          <input id="wrap-lines-input" type="checkbox" ?checked="${this._wrapLines}"
                                  @change="${this._wrapLinesInputChanged}">
                               <div @click="${this._wrapLinesInputChanged}">
                                 Wrap lines
                               </div>
                           </input>
-                        </div>
-                    </div>
-                </div>
-                <div class="result-panel-content" id="result-panel">
-                </div>
-            </div>
-        `;
+                        </div>`
+              : nothing}
+          </div>
+        </div>
+        <div class="result-panel-content" id="result-panel"></div>
+      </div>
+    `;
+  }
+
+  _isReRender(changedProperties) {
+    // If no result rendered yet, need to render
+    if (this._resultPanel().childElementCount === 0) {
+      return false;
+    }
+    // If view didn't change, and it's currently not null, no re-render needed
+    if (!changedProperties.has('view') && this.view !== null) {
+      return true;
+    }
+    // same value, no re-render needed
+    return !!(
+      changedProperties.has('view') &&
+      changedProperties.get('view') === this.view
+    );
   }
 
   _showWrapLinesOption() {
-    return this.view && (this.view === 'json' || this.view === 'logs');
+    return this.view && (this.view === VIEW_JSON || this.view === VIEW_LOGS);
   }
 
   _selectedViewChanged(event) {
     this.view = event.target.value;
-
-    this.shadowRoot.querySelector('#show-unchanged-group').style.display =
-      this.view !== 'visual_delta' ? 'none' : '';
-
-    this.shadowRoot.querySelector('#wrap-lines-group').style.display =
-      this._showWrapLinesOption() ? '' : 'none';
   }
 
-  _showUnchangedInputChanged(e) {
+  _showUnchangedInputChanged() {
     let el = this._showUnchangedInput();
     if (el.disabled) {
       return;
     }
-    if (typeof e.target.checked === 'undefined') {
-      el.checked = !el.checked;
-    }
-    htmlFormatter.showUnchanged(
-      el.checked,
-      this.shadowRoot.querySelector('#result-panel')
-    );
+
+    this._showUnchanged = !this._showUnchanged;
+    htmlFormatter.showUnchanged(this._showUnchanged, this._resultPanel());
   }
 
-  _wrapLinesInputChanged(e) {
+  _wrapLinesInputChanged() {
     let el = this._wrapLinesInput();
     if (el.disabled) {
       return;
     }
-    if (typeof e.target.checked === 'undefined') {
-      el.checked = !el.checked;
-    }
-    this._renderResult();
+
+    this._wrapLines = !this._wrapLines;
+    [this._jsonViewEditor, this._logsViewEditor].forEach((view) => {
+      if (view) {
+        view.dispatch({
+          effects: this._wrapLinesCompartment.reconfigure(
+            this._wrapLines ? EditorView.lineWrapping : []
+          ),
+        });
+      }
+    });
   }
 
   _resultPanel() {
@@ -192,14 +247,37 @@ export class PlaygroundResultPanel extends LitElement {
     return this.shadowRoot?.querySelector('#wrap-lines-input');
   }
 
-  _renderResult() {
+  _updateResultViewSelect() {
+    if (this.viewConfig) {
+      this._views = [];
+      if (this.viewConfig[VIEW_VISUAL_DELTA]?.enabled) {
+        this._views.push({id: VIEW_VISUAL_DELTA, name: 'Visual diff'});
+      }
+      if (this.viewConfig[VIEW_ANNOTATED_DELTA]?.enabled) {
+        this._views.push({id: VIEW_ANNOTATED_DELTA, name: 'Annotated diff'});
+      }
+      if (this.viewConfig[VIEW_JSON]?.enabled) {
+        this._views.push({id: VIEW_JSON, name: 'JSON'});
+      }
+      if (this.viewConfig[VIEW_LOGS]?.enabled) {
+        this._views.push({id: VIEW_LOGS, name: 'Execution logs'});
+      }
+      if (this.viewConfig[this.view]?.enabled === false) {
+        this.view = this._views[0].id;
+      }
+    }
+  }
+
+  _renderResult(rerender = false) {
     if (!this.result) return;
 
-    this._resultPanel().innerHTML = '';
-    this._errored = !!this.result.error;
+    if (rerender === false) {
+      this._resultPanel().innerHTML = '';
+    }
 
-    if (this.view === 'logs') {
-      this._renderExecutionLogsResult();
+    this._errored = !!this.result.error;
+    if (this.view === VIEW_LOGS) {
+      this._renderExecutionLogsResult(rerender);
       return;
     }
 
@@ -207,56 +285,85 @@ export class PlaygroundResultPanel extends LitElement {
     if (resultError) {
       this._renderResultText(resultError);
     } else {
-      this._renderJsonDiffResult();
+      this._renderJsonDiffResult(this.result, rerender);
     }
   }
 
-  _renderExecutionLogsResult() {
-    let extensions = [basicSetup, EditorView.editable.of(false), json()];
+  _renderExecutionLogsResult(rerender) {
+    if (!this._logsViewEditor) {
+      let extensions = [basicSetup, EditorView.editable.of(false), json()];
 
-    if (this._wrapLinesInput()?.checked) {
-      extensions.push(EditorView.lineWrapping);
+      if (this._wrapLinesInput()?.checked) {
+        extensions.push(this._wrapLinesCompartment.of(EditorView.lineWrapping));
+      } else {
+        extensions.push(this._wrapLinesCompartment.of([]));
+      }
+
+      this._logsViewEditor = new EditorView({
+        extensions: extensions,
+        parent: this._resultPanel(),
+      });
+    } else {
+      if (rerender !== true) {
+        this._resultPanel().appendChild(this._logsViewEditor.dom);
+      }
     }
 
-    let editor = new EditorView({
-      extensions: extensions,
-      parent: this._resultPanel(),
-    });
+    let anchor = this._logsViewEditor.state?.selection?.main?.anchor;
+    if (anchor > this.result.logs.length) {
+      anchor = this.result.logs.length;
+    }
 
-    editor.dispatch({
+    this._logsViewEditor.dispatch({
       changes: {
         from: 0,
-        to: editor.state.doc.length,
+        to: this._logsViewEditor.state.doc.length,
         insert: this.result.logs,
       },
+      selection: {anchor: anchor},
     });
   }
 
-  _renderJsonDiffResult() {
-    if (!this.result.value) {
+  _renderJsonDiffResult(result, rerender) {
+    if (!result.value) {
       this._renderResultText('Empty result');
       return;
     }
 
     let left = JSON.parse(this.payload);
-    let right = JSON.parse(this.result.value);
-    if (this.view === 'json') {
-      let extensions = [basicSetup, EditorView.editable.of(false), json()];
+    let right = JSON.parse(result.value);
+    if (this.view === VIEW_JSON) {
+      if (!this._jsonViewEditor) {
+        let extensions = [basicSetup, EditorView.editable.of(false), json()];
 
-      if (this._wrapLinesInput()?.checked) {
-        extensions.push(EditorView.lineWrapping);
+        if (this._wrapLinesInput()?.checked) {
+          extensions.push(
+            this._wrapLinesCompartment.of(EditorView.lineWrapping)
+          );
+        } else {
+          extensions.push(this._wrapLinesCompartment.of([]));
+        }
+
+        this._jsonViewEditor = new EditorView({
+          extensions: extensions,
+          parent: this._resultPanel(),
+        });
+      } else {
+        if (rerender !== true) {
+          this._resultPanel().appendChild(this._jsonViewEditor.dom);
+        }
       }
 
-      let editor = new EditorView({
-        extensions: extensions,
-        parent: this._resultPanel(),
-      });
+      let value = JSON.stringify(right, null, 2);
+      if (result.json) {
+        value = JSON.stringify(JSON.parse(result.json), null, 2);
+      }
 
-      editor.dispatch({
+      this._jsonViewEditor.dispatch({
         changes: {
           from: 0,
-          to: editor.state.doc.length,
-          insert: JSON.stringify(right, null, 2),
+          to: this._jsonViewEditor.state.doc.length,
+          insert: value,
         },
       });
       return;
@@ -295,13 +402,10 @@ export class PlaygroundResultPanel extends LitElement {
     }
 
     let formatter =
-      this.view === 'annotated_delta' ? annotatedFormatter : htmlFormatter;
+      this.view === VIEW_ANNOTATED_DELTA ? annotatedFormatter : htmlFormatter;
 
     if (formatter.showUnchanged && formatter.hideUnchanged) {
-      formatter.showUnchanged(
-        this._showUnchangedInput().checked,
-        this._resultPanel()
-      );
+      formatter.showUnchanged(this._showUnchanged, this._resultPanel());
     }
     this._resultPanel().innerHTML = formatter.format(delta, left);
   }

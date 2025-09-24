@@ -20,9 +20,10 @@
 package internal
 
 import (
+	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
-	"time"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
 )
@@ -33,7 +34,12 @@ var (
 )
 
 func init() {
-	for _, executor := range internal.Executors() {
+	executors := internal.Executors()
+	slices.SortFunc(executors, func(a, b internal.Executor) int {
+		return strings.Compare(a.Metadata().Name, b.Metadata().Name)
+	})
+
+	for _, executor := range executors {
 		registerStatementsExecutor(executor)
 	}
 }
@@ -43,70 +49,77 @@ func registerStatementsExecutor(executor internal.Executor) {
 	statementsExecutorsLookup[executor.Metadata().ID] = executor
 }
 
-func newResult(json string, err string, logs string, executionTime int64) map[string]any {
-	v := map[string]any{
-		"value":         json,
-		"logs":          logs,
-		"executionTime": executionTime,
-	}
-	if err != "" {
-		v["error"] = err
-	}
-	return v
-}
-
-func NewErrorResult(err string, logs string) map[string]any {
-	return newResult("", err, logs, 0)
-}
-
-func takeObservedLogs(executor internal.Executor) string {
-	all := executor.ObservedLogs().TakeAll()
-	var s strings.Builder
-	for _, entry := range all {
-		s.WriteString(entry.ConsoleEncodedEntry())
-	}
-	return s.String()
-}
-
-func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName string) map[string]any {
+func Execute(config, signal, ottlDataPayload, executorName string, debug bool) map[string]any {
 	executor, ok := statementsExecutorsLookup[executorName]
 	if !ok {
-		return NewErrorResult(fmt.Sprintf("unsupported evaluator %s", executorName), "")
+		return internal.NewErrorResult(fmt.Sprintf("unsupported executor %s", executorName), "").AsRaw()
 	}
 
-	start := time.Now()
-	var output []byte
+	var result *internal.Result
 	var err error
-	switch ottlDataType {
-	case "logs":
-		output, err = executor.ExecuteLogStatements(config, ottlDataPayload)
-	case "traces":
-		output, err = executor.ExecuteTraceStatements(config, ottlDataPayload)
-	case "metrics":
-		output, err = executor.ExecuteMetricStatements(config, ottlDataPayload)
-	default:
-		return NewErrorResult(fmt.Sprintf("unsupported OTLP data type %s", ottlDataType), "")
+	if debug {
+		result, err = debugConfig(config, signal, ottlDataPayload, executorName, executor)
+	} else {
+		result, err = executeConfig(config, signal, ottlDataPayload, executorName, executor)
 	}
 
 	if err != nil {
-		return NewErrorResult(fmt.Sprintf("unable to run %s statements. Error: %v", ottlDataType, err), takeObservedLogs(executor))
+		result = internal.NewErrorResult(fmt.Sprintf("unable to run %s configuration. Error: %v", signal, err), executor.ObservedLogs().TakeAllString())
 	}
 
-	executionTime := time.Since(start).Milliseconds()
-	return newResult(string(output), "", takeObservedLogs(executor), executionTime)
+	return result.AsRaw()
 }
 
-func StatementsExecutors() []any {
+func executeConfig(config, signal, ottlDataPayload, _ string, executor internal.Executor) (*internal.Result, error) {
+	switch signal {
+	case "logs":
+		return executor.ExecuteLogs(config, ottlDataPayload)
+	case "traces":
+		return executor.ExecuteTraces(config, ottlDataPayload)
+	case "metrics":
+		return executor.ExecuteMetrics(config, ottlDataPayload)
+	default:
+		return internal.NewErrorResult(fmt.Sprintf("unsupported OTLP signal type %s", signal), ""), nil
+	}
+}
+
+func debugConfig(config, signal, ottlDataPayload, executorName string, executor internal.Executor) (*internal.Result, error) {
+	debuggableExecutor, ok := executor.(internal.DebuggableExecutor)
+	if !ok {
+		return internal.NewErrorResult(fmt.Sprintf("executor %q does not support debugging", executorName), ""), nil
+	}
+
+	debugger, err := debuggableExecutor.Debugger()
+	if err != nil {
+		return nil, err
+	}
+
+	switch signal {
+	case "logs":
+		return debugger.DebugLogs(config, ottlDataPayload)
+	case "traces":
+		return debugger.DebugTraces(config, ottlDataPayload)
+	case "metrics":
+		return debugger.DebugMetrics(config, ottlDataPayload)
+	default:
+		return internal.NewErrorResult(fmt.Sprintf("unsupported OTLP signal type %s", signal), ""), nil
+	}
+}
+
+func Executors() []any {
 	var res []any
 	for _, executor := range statementsExecutors {
-		meta := executor.Metadata()
-		res = append(res, map[string]any{
-			"id":      meta.ID,
-			"name":    meta.Name,
-			"path":    meta.Path,
-			"docsURL": meta.DocsURL,
-			"version": meta.Version,
-		})
+		var metadataValue map[string]any
+		if metadataBytes, err := json.Marshal(executor.Metadata()); err == nil {
+			_ = json.Unmarshal(metadataBytes, &metadataValue)
+		}
+
+		var examples map[string]any
+		if examplesJson, err := json.Marshal(executor.Metadata().Examples); err == nil {
+			_ = json.Unmarshal(examplesJson, &examples)
+		}
+
+		res = append(res, metadataValue)
 	}
 	return res
 }
