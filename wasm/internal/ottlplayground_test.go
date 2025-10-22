@@ -121,7 +121,7 @@ func Test_ExecuteStatements(t *testing.T) {
 			name:           "Profiles Success",
 			otlpDataType:   "profiles",
 			executorFunc:   "ExecuteProfileStatements",
-			expectedOutput: "metric output",
+			expectedOutput: "profile output",
 		},
 		{
 			name:          "Profiles Error",
