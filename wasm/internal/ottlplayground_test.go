@@ -115,7 +115,7 @@ func Test_ExecuteStatements(t *testing.T) {
 			name:          "Metrics Error",
 			otlpDataType:  "metrics",
 			executorFunc:  "ExecuteMetricStatements",
-			expectedError: errors.New("ExecuteProfileStatements execution error"),
+			expectedError: errors.New("ExecuteMetricStatements execution error"),
 		},
 		{
 			name:           "Profiles Success",
