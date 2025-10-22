@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground/internal"
+	"github.com/elastic/ottl-playground/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"

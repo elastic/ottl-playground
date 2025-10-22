@@ -15,7 +15,7 @@ RUN if [ "$SKIP_BUILD_UNREGISTERED_VERSIONS" = "" ]; then make build-unregistere
 
 # NGINX with brotli
 FROM alpine
-RUN apk add brotli nginx nginx-mod-http-brotli
+RUN apk add brotli nginx
 COPY docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY --from=webbuilder /web/public /usr/share/nginx/html
 COPY --from=wasmbuilder /build/web/public/wasm /usr/share/nginx/html/wasm

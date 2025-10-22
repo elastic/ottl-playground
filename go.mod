@@ -1,4 +1,4 @@
-module github.com/open-telemetry/opentelemetry-collector-contrib/cmd/ottlplayground
+module github.com/elastic/ottl-playground
 
 go 1.24.0
 
@@ -86,6 +86,3 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-// IMPORTANT NOTE: Do not add replace statements to this go.mod. This will break go install.
-// See https://github.com/open-telemetry/opentelemetry-collector-contrib/issues/27855.

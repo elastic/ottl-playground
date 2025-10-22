@@ -133,7 +133,7 @@ export class Playground extends LitElement {
 
   _loadURLBase64DataHash() {
     if (this.disableShareLink === true) return;
-    let hash = window.top.location.hash?.substring(1);
+    let hash = this._getUrlHash();
     if (hash) {
       try {
         let data = JSON.parse(base64ToUtf8(hash));
@@ -390,18 +390,47 @@ export class Playground extends LitElement {
   }
 
   _buildUrlWithLink(value) {
-    if (window.top.location.hash) {
+    let urlHash = this._getUrlHash();
+    if (urlHash) {
+      return this._replaceUrlHash(value);
+    } else {
+      return this._getCurrentUrl() + '#' + value;
+    }
+  }
+
+  _isEmbedded() {
+    return window.self !== window.top;
+  }
+
+  _getUrlHash() {
+    if (this._isEmbedded()) {
+      return window.location.hash?.substring(1);
+    } else {
+      return window.top.location.hash?.substring(1);
+    }
+  }
+
+  _getCurrentUrl() {
+    if (this._isEmbedded()) {
+      return window.location.href;
+    } else {
+      return window.top.location.href;
+    }
+  }
+
+  _replaceUrlHash(value) {
+    if (this._isEmbedded()) {
+      return window.location.href.replace(window.location.hash, '#' + value);
+    } else {
       return window.top.location.href.replace(
         window.top.location.hash,
         '#' + value
       );
-    } else {
-      return window.top.location.href + '#' + value;
     }
   }
 
   async _copyToClipboard(textToCopy) {
-    if (navigator.clipboard && window.isSecureContext) {
+    if (navigator.clipboard && window.isSecureContext && !this._isEmbedded()) {
       await navigator.clipboard.writeText(textToCopy);
     } else {
       const textArea = document.createElement('textarea');
