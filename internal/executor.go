@@ -46,6 +46,8 @@ type Executor interface {
 	ExecuteTraceStatements(config, input string) ([]byte, error)
 	// ExecuteMetricStatements is like ExecuteLogStatements, but for metrics.
 	ExecuteMetricStatements(config, input string) ([]byte, error)
+	// ExecuteProfileStatements is like ExecuteLogStatements, but for profiles.
+	ExecuteProfileStatements(config, input string) ([]byte, error)
 	// ObservedLogs returns the statements execution's logs
 	ObservedLogs() *ObservedLogs
 	// Metadata returns information about the executor

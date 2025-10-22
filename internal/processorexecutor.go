@@ -21,7 +21,12 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"strings"
+
+	"go.opentelemetry.io/collector/consumer/xconsumer"
+	"go.opentelemetry.io/collector/pdata/pprofile"
+	"go.opentelemetry.io/collector/processor/xprocessor"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -213,6 +218,48 @@ func (p *processorExecutor[C]) ExecuteMetricStatements(yamlConfig, input string)
 
 	metricsMarshaler := pmetric.JSONMarshaler{}
 	json, err := metricsMarshaler.MarshalMetrics(transformedMetrics)
+	if err != nil {
+		return nil, err
+	}
+
+	return json, nil
+}
+
+func (p *processorExecutor[C]) ExecuteProfileStatements(yamlConfig, input string) ([]byte, error) {
+	config, err := p.parseConfig(yamlConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	factory, ok := p.factory.(xprocessor.Factory)
+	if !ok {
+		return nil, errors.New("profiles are not supported by this OTel Collector version or component")
+	}
+
+	transformedProfiles := pprofile.NewProfiles()
+	metricsConsumer, _ := xconsumer.NewProfiles(func(_ context.Context, ld pprofile.Profiles) error {
+		transformedProfiles = ld
+		return nil
+	})
+
+	profilesProcessor, err := factory.CreateProfiles(context.Background(), p.settings, config, metricsConsumer)
+	if err != nil {
+		return nil, err
+	}
+
+	profilesUnmarshaler := &pprofile.JSONUnmarshaler{}
+	inputProfiles, err := profilesUnmarshaler.UnmarshalProfiles([]byte(input))
+	if err != nil {
+		return nil, err
+	}
+
+	err = profilesProcessor.ConsumeProfiles(context.Background(), inputProfiles)
+	if err != nil {
+		return nil, err
+	}
+
+	profilesMarshaler := pprofile.JSONMarshaler{}
+	json, err := profilesMarshaler.MarshalProfiles(transformedProfiles)
 	if err != nil {
 		return nil, err
 	}

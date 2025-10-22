@@ -25,9 +25,11 @@ export const getJsonPayloadType = (payload) => {
     return 'traces';
   } else if (json['resourceMetrics']) {
     return 'metrics';
+  } else if (json['resourceProfiles']) {
+    return 'profiles';
   } else {
     throw new Error(
-      'document must include an OTLP ["resourceLogs", "resourceSpans", "resourceMetrics"] root element'
+      'document must include an OTLP ["resourceLogs", "resourceSpans", "resourceMetrics", "resourceProfiles"] root element'
     );
   }
 };

@@ -117,6 +117,18 @@ func Test_ExecuteStatements(t *testing.T) {
 			executorFunc:  "ExecuteMetricStatements",
 			expectedError: errors.New("ExecuteMetricStatements execution error"),
 		},
+		{
+			name:           "Profiles Success",
+			otlpDataType:   "profiles",
+			executorFunc:   "ExecuteProfileStatements",
+			expectedOutput: "profile output",
+		},
+		{
+			name:          "Profiles Error",
+			otlpDataType:  "profiles",
+			executorFunc:  "ExecuteProfileStatements",
+			expectedError: errors.New("ExecuteProfileStatements execution error"),
+		},
 	}
 
 	var (
@@ -187,6 +199,11 @@ func (m *MockExecutor) ExecuteTraceStatements(config, payload string) ([]byte, e
 }
 
 func (m *MockExecutor) ExecuteMetricStatements(config, payload string) ([]byte, error) {
+	args := m.Called(config, payload)
+	return []byte(args.String(0)), args.Error(1)
+}
+
+func (m *MockExecutor) ExecuteProfileStatements(config, payload string) ([]byte, error) {
 	args := m.Called(config, payload)
 	return []byte(args.String(0)), args.Error(1)
 }

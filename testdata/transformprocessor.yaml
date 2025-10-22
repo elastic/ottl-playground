@@ -11,3 +11,7 @@ metric_statements:
   - context: resource
     statements:
       - set(attributes["foo"], "bar")
+profile_statements:
+  - context: profile
+    statements:
+      - set(attributes["foo"], "bar")
