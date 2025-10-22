@@ -84,6 +84,8 @@ func ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName strin
 		output, err = executor.ExecuteTraceStatements(config, ottlDataPayload)
 	case "metrics":
 		output, err = executor.ExecuteMetricStatements(config, ottlDataPayload)
+	case "profiles":
+		output, err = executor.ExecuteProfileStatements(config, ottlDataPayload)
 	default:
 		return NewErrorResult(fmt.Sprintf("unsupported OTLP data type %s", ottlDataType), "")
 	}

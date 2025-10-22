@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
@@ -92,6 +93,20 @@ func Test_ExecuteMetricStatements(t *testing.T) {
 	outputMetrics, err := unmarshaler.UnmarshalMetrics(output)
 	require.NoError(t, err)
 	require.NotNil(t, outputMetrics)
+}
+
+func Test_ExecuteProfileStatements(t *testing.T) {
+	executor := newProcessorExecutor[transformprocessor.Config](transformprocessor.NewFactory())
+	config := readTestData(t, transformprocessorConfig)
+	payload := readTestData(t, "profiles.json")
+
+	output, err := executor.ExecuteProfileStatements(config, payload)
+	require.NoError(t, err)
+
+	unmarshaler := &pprofile.JSONUnmarshaler{}
+	outputProfiles, err := unmarshaler.UnmarshalProfiles(output)
+	require.NoError(t, err)
+	require.NotNil(t, outputProfiles)
 }
 
 func Test_ObservedLogs(t *testing.T) {

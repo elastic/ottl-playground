@@ -1,0 +1,107 @@
+{
+  "resourceProfiles": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "resource-attr",
+            "value": {
+              "stringValue": "resource-attr-val-1"
+            }
+          }
+        ]
+      },
+      "scopeProfiles": [
+        {
+          "scope": {},
+          "profiles": [
+            {
+              "sampleType": {
+                "aggregationTemporality": 1
+              },
+              "sample": [
+                {
+                  "stackIndex": 1,
+                  "values": [
+                    "4"
+                  ],
+                  "attributeIndices": [
+                    0
+                  ]
+                }
+              ],
+              "timeUnixNano": "1581452772000000321",
+              "durationNano": "1581452773000000789",
+              "periodType": {
+                "aggregationTemporality": 1
+              },
+              "profileId": "0102030405060708090a0b0c0d0e0f10",
+              "droppedAttributesCount": 1
+            },
+            {
+              "sampleType": {
+                "aggregationTemporality": 1
+              },
+              "sample": [
+                {
+                  "stackIndex": 1,
+                  "values": [
+                    "9"
+                  ],
+                  "attributeIndices": [
+                    0
+                  ]
+                }
+              ],
+              "timeUnixNano": "1581452772000000321",
+              "durationNano": "1581452773000000789",
+              "periodType": {
+                "aggregationTemporality": 1
+              },
+              "profileId": "0202030405060708090a0b0c0d0e0f10"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "dictionary": {
+    "locationTable": [
+      {
+        "address": "1"
+      },
+      {
+        "address": "2"
+      }
+    ],
+    "stringTable": [
+      "",
+      "key"
+    ],
+    "attributeTable": [
+      {
+        "keyStrindex": 1,
+        "value": {
+          "stringValue": "value"
+        }
+      },
+      {
+        "value": {
+          "stringValue": "value"
+        }
+      }
+    ],
+    "stackTable": [
+      {
+        "locationIndices": [
+          0
+        ]
+      },
+      {
+        "locationIndices": [
+          1
+        ]
+      }
+    ]
+  }
+}

@@ -6,7 +6,7 @@ COPY Makefile .
 RUN make build-web
 
 # Web-assembly and server
-FROM golang:1.23 AS wasmbuilder
+FROM golang:1.24 AS wasmbuilder
 WORKDIR /build
 COPY ./ .
 RUN make build-wasm
