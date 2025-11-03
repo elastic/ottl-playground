@@ -163,7 +163,9 @@ export class PlaygroundConfigPanel extends LitElement {
                     style="max-width:250px"
                     ?disabled="${this.debuggingInfo?.debugging === true}"
                   >
-                    <option selected disabled value="">Example ${'\u00A0'.repeat(45)}</option>
+                    <option selected disabled value="">
+                      Example ${'\u00A0'.repeat(45)}
+                    </option>
                     ${this.examples &&
                     repeat(
                       this.examples,
@@ -233,7 +235,11 @@ export class PlaygroundConfigPanel extends LitElement {
   }
 
   hasBreakpoints() {
-    if (!this._editor || !this._editor.state.doc.length || !this._breakpointState) {
+    if (
+      !this._editor ||
+      !this._editor.state.doc.length ||
+      !this._breakpointState
+    ) {
       return false;
     }
 
@@ -576,9 +582,11 @@ export class PlaygroundConfigPanel extends LitElement {
     );
 
     const debuggingLinesExt = [debuggingTheme, showDebuggingLine];
-    const debuggingShortcutsEnabled = ()=> {
-      return me.debuggerEnabled === true && me.debuggingInfo?.debugging === true;
-    }
+    const debuggingShortcutsEnabled = () => {
+      return (
+        me.debuggerEnabled === true && me.debuggingInfo?.debugging === true
+      );
+    };
 
     let readOnly =
       this.readOnly === true || this.debuggingInfo?.debugging === true;
@@ -592,32 +600,28 @@ export class PlaygroundConfigPanel extends LitElement {
             {
               key: 'Shift-F2',
               run: () => {
-                if (debuggingShortcutsEnabled())
-                  this._stopDebuggingClick();
+                if (debuggingShortcutsEnabled()) this._stopDebuggingClick();
                 return true;
               },
             },
             {
               key: 'Shift-F7',
               run: () => {
-                if (debuggingShortcutsEnabled())
-                  this._previousDebugLineClick();
+                if (debuggingShortcutsEnabled()) this._previousDebugLineClick();
                 return true;
               },
             },
             {
               key: 'Shift-F8',
               run: () => {
-                if (debuggingShortcutsEnabled())
-                  this._nextDebugLineClick();
+                if (debuggingShortcutsEnabled()) this._nextDebugLineClick();
                 return true;
               },
             },
             {
               key: 'Shift-F9',
               run: () => {
-                if (debuggingShortcutsEnabled())
-                  this._resumeDebuggingClick();
+                if (debuggingShortcutsEnabled()) this._resumeDebuggingClick();
                 return true;
               },
             },

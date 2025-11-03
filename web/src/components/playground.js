@@ -229,7 +229,8 @@ export class Playground extends LitElement {
                   ?debugger-enabled="${this._executor?.debuggable === true}"
                   debugging-info="${JSON.stringify(this._debuggingInfo)}"
                   @debugging-line-changed="${this._handleDebuggingLineChanged}"
-                  @debugging-stop-requested="${this._handDebuggingStopRequested}"
+                  @debugging-stop-requested="${this
+                    ._handDebuggingStopRequested}"
                 >
                 </playground-config-panel>
               </div>
@@ -363,7 +364,9 @@ export class Playground extends LitElement {
       return;
     }
 
-    let debug = this.shadowRoot?.querySelector('#config-code-panel')?.hasBreakpoints();
+    let debug = this.shadowRoot
+      ?.querySelector('#config-code-panel')
+      ?.hasBreakpoints();
 
     // eslint-disable-next-line no-undef
     let result = execute(
@@ -371,7 +374,7 @@ export class Playground extends LitElement {
       payloadType,
       state.payload,
       state.executor,
-      debug,
+      debug
     );
 
     this.dispatchEvent(
@@ -395,9 +398,11 @@ export class Playground extends LitElement {
   _setResult(result) {
     this._result = result;
     if (result?.debug === true) {
-      this._getResultPanel().clearResult().then(() => {
-        this._setDebuggingInfo(result);
-      });
+      this._getResultPanel()
+        .clearResult()
+        .then(() => {
+          this._setDebuggingInfo(result);
+        });
     } else {
       if (this._debuggingInfo) {
         this._debuggingInfo = {...this._debuggingInfo, debugging: false};
@@ -433,13 +438,13 @@ export class Playground extends LitElement {
 
     // If we were already in debugging mode, reset the debugging flag to false
     // so the UI can reset properly.
-    if (this._debuggingInfo?.debugging === true){
+    if (this._debuggingInfo?.debugging === true) {
       this._debuggingInfo = null;
     }
-    
-    this.updateComplete.then(()=>{
+
+    this.updateComplete.then(() => {
       this._debuggingInfo = {...this._debuggingInfo, ...debuggingInfo};
-    })
+    });
   }
 
   _handleConfigExampleChanged(event) {
