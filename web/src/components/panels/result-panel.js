@@ -294,8 +294,17 @@ export class PlaygroundResultPanel extends LitElement {
 
   _renderExecutionLogsResult(rerender) {
     if (!this._logsViewEditor) {
-      let extensions = [basicSetup, EditorView.editable.of(false), json()];
+      const selectionHighlight = EditorView.theme({
+        '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
+          {backgroundColor: 'yellow'},
+      });
 
+      let extensions = [
+        basicSetup,
+        selectionHighlight,
+        EditorView.editable.of(false),
+        json(),
+      ];
       if (this._wrapLinesInput()?.checked) {
         extensions.push(this._wrapLinesCompartment.of(EditorView.lineWrapping));
       } else {
