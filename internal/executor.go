@@ -25,6 +25,7 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -170,6 +171,8 @@ type Executor interface {
 	ExecuteTraces(config, input string) (*Result, error)
 	// ExecuteMetrics is like ExecuteLogs, but for metrics.
 	ExecuteMetrics(config, input string) (*Result, error)
+	// ExecuteProfiles is like ExecuteLogs, but for profiles.
+	ExecuteProfiles(config, input string) (*Result, error)
 	// Metadata returns information about the executor
 	Metadata() *Metadata
 }
@@ -189,6 +192,8 @@ type Debugger interface {
 	DebugTraces(config, input string) (*Result, error)
 	// DebugMetrics is like DebugLogs, but for metrics.
 	DebugMetrics(config, input string) (*Result, error)
+	// DebugProfiles is like DebugLogs, but for profiles.
+	DebugProfiles(config, input string) (*Result, error)
 }
 
 // Observable represents an entity that can provide observed logs.
@@ -198,12 +203,13 @@ type Observable interface {
 }
 
 type defaultExecutor[C any] struct {
-	consumer        Consumer[C]
-	metadata        *Metadata
-	logsMarshaler   plog.Marshaler
-	metricMarshaler pmetric.Marshaler
-	traceMarshaler  ptrace.Marshaler
-	debugger        Debugger
+	consumer         Consumer[C]
+	metadata         *Metadata
+	logMarshaler     plog.Marshaler
+	metricMarshaler  pmetric.Marshaler
+	traceMarshaler   ptrace.Marshaler
+	profileMarshaler pprofile.Marshaler
+	debugger         Debugger
 }
 
 type executorOption[C any] func(*defaultExecutor[C])
@@ -221,11 +227,12 @@ func NewJSONExecutor[C any](
 	options ...executorOption[C],
 ) Executor {
 	exec := &defaultExecutor[C]{
-		consumer:        consumer,
-		metadata:        metadata,
-		logsMarshaler:   &plog.JSONMarshaler{},
-		metricMarshaler: &pmetric.JSONMarshaler{},
-		traceMarshaler:  &ptrace.JSONMarshaler{},
+		consumer:         consumer,
+		metadata:         metadata,
+		logMarshaler:     &plog.JSONMarshaler{},
+		metricMarshaler:  &pmetric.JSONMarshaler{},
+		traceMarshaler:   &ptrace.JSONMarshaler{},
+		profileMarshaler: &pprofile.JSONMarshaler{},
 	}
 	for _, opt := range options {
 		opt(exec)
@@ -245,7 +252,7 @@ func (e *defaultExecutor[C]) ExecuteLogs(config, input string) (*Result, error) 
 		return nil, err
 	}
 
-	return newExecutionResult(e, e.logsMarshaler.MarshalLogs, func() (plog.Logs, error) {
+	return newExecutionResult(e, e.logMarshaler.MarshalLogs, func() (plog.Logs, error) {
 		transformedLogs := inputLogs
 		for _, cfg := range cfgs {
 			if len(cfgs) > 1 {
@@ -311,6 +318,33 @@ func (e *defaultExecutor[C]) ExecuteMetrics(config, input string) (*Result, erro
 			}
 		}
 		return transformedMetrics, nil
+	})
+}
+
+func (e *defaultExecutor[C]) ExecuteProfiles(config, input string) (*Result, error) {
+	profilesUnmarshaler := &pprofile.JSONUnmarshaler{}
+	inputProfiles, err := profilesUnmarshaler.UnmarshalProfiles([]byte(input))
+	if err != nil {
+		return nil, err
+	}
+
+	cfgs, err := parseConfig[C](e.consumer.ComponentID(), config, e.consumer.CreateDefaultConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return newExecutionResult(e, e.profileMarshaler.MarshalProfiles, func() (pprofile.Profiles, error) {
+		transformedProfiles := inputProfiles
+		for _, cfg := range cfgs {
+			if len(cfgs) > 1 {
+				e.consumer.TelemetrySettings().Logger.Sugar().Debugf("[playground] Running configuration: %s", cfg.Key)
+			}
+			transformedProfiles, err = e.consumer.ConsumeProfiles(cfg.Value, transformedProfiles)
+			if err != nil {
+				return pprofile.Profiles{}, err
+			}
+		}
+		return transformedProfiles, nil
 	})
 }
 

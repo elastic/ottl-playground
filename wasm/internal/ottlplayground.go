@@ -78,6 +78,8 @@ func executeConfig(config, signal, ottlDataPayload, _ string, executor internal.
 		return executor.ExecuteTraces(config, ottlDataPayload)
 	case "metrics":
 		return executor.ExecuteMetrics(config, ottlDataPayload)
+	case "profiles":
+		return executor.ExecuteProfiles(config, ottlDataPayload)
 	default:
 		return internal.NewErrorResult(fmt.Sprintf("unsupported OTLP signal type %s", signal), ""), nil
 	}
@@ -101,6 +103,8 @@ func debugConfig(config, signal, ottlDataPayload, executorName string, executor 
 		return debugger.DebugTraces(config, ottlDataPayload)
 	case "metrics":
 		return debugger.DebugMetrics(config, ottlDataPayload)
+	case "profiles":
+		return debugger.DebugProfiles(config, ottlDataPayload)
 	default:
 		return internal.NewErrorResult(fmt.Sprintf("unsupported OTLP signal type %s", signal), ""), nil
 	}

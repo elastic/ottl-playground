@@ -21,6 +21,11 @@ package internal
 
 import (
 	"context"
+	"errors"
+
+	"go.opentelemetry.io/collector/consumer/xconsumer"
+	"go.opentelemetry.io/collector/pdata/pprofile"
+	"go.opentelemetry.io/collector/processor/xprocessor"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -43,6 +48,8 @@ type Consumer[C any] interface {
 	ConsumeMetrics(config *C, input pmetric.Metrics) (pmetric.Metrics, error)
 	// ConsumeTraces processes the input traces and returns the transformed traces or an error.
 	ConsumeTraces(config *C, input ptrace.Traces) (ptrace.Traces, error)
+	// ConsumeProfiles processes the input profiles and returns the transformed profiles or an error.
+	ConsumeProfiles(config *C, input pprofile.Profiles) (pprofile.Profiles, error)
 	// CreateDefaultConfig returns the default configuration for the given component.
 	CreateDefaultConfig() *C
 	// TelemetrySettings returns the telemetry settings used by the component.
@@ -162,6 +169,36 @@ func (p processorConsumer[C]) ConsumeTraces(config *C, input ptrace.Traces) (ptr
 	}
 
 	return transformedTraces, nil
+}
+
+func (p processorConsumer[C]) ConsumeProfiles(config *C, input pprofile.Profiles) (pprofile.Profiles, error) {
+	factory, ok := p.factory.(xprocessor.Factory)
+	if !ok {
+		return pprofile.Profiles{}, errors.New("profiles are not supported by this OTel Collector version or component")
+	}
+
+	transformedProfiles := pprofile.NewProfiles()
+	profilesConsumer, _ := xconsumer.NewProfiles(func(_ context.Context, ld pprofile.Profiles) error {
+		transformedProfiles = ld
+		return nil
+	})
+
+	profilesProcessor, err := factory.CreateProfiles(context.Background(), p.settings, config, profilesConsumer)
+	if err != nil {
+		return pprofile.Profiles{}, err
+	}
+
+	err = profilesProcessor.Start(context.Background(), componenttest.NewNopHost())
+	if err != nil {
+		return pprofile.Profiles{}, err
+	}
+
+	err = profilesProcessor.ConsumeProfiles(context.Background(), input)
+	if err != nil {
+		return pprofile.Profiles{}, err
+	}
+
+	return transformedProfiles, nil
 }
 
 func (p processorConsumer[C]) ObservedLogs() *ObservedLogs {

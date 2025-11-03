@@ -246,6 +246,32 @@ func Test_transformProcessorDebugger_DebugMetrics(t *testing.T) {
 	}
 }
 
+func Test_transformProcessorDebugger_DebugProfiles(t *testing.T) {
+	debugger := NewTransformProcessorDebugger().(*transformProcessorDebugger)
+	config := readTestData(t, transformprocessorConfig)
+	payload := readTestData(t, "profiles.json")
+
+	result, err := debugger.DebugProfiles(config, payload)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+
+	// Verify debug result structure
+	assert.True(t, result.Debug)
+	assert.NotEmpty(t, result.Value)
+
+	// Parse the result JSON to verify it's valid
+	var debugResults []*Result
+	err = json.Unmarshal([]byte(result.Value), &debugResults)
+	require.NoError(t, err)
+	assert.NotEmpty(t, debugResults)
+
+	// Verify each debug result has proper structure
+	for _, debugResult := range debugResults {
+		assert.NotEmpty(t, debugResult.Value)
+		assert.Greater(t, debugResult.Line, int64(0))
+	}
+}
+
 func Test_transformProcessorDebugger_DebugLogs_MultipleConfigs(t *testing.T) {
 	debugger := NewTransformProcessorDebugger().(*transformProcessorDebugger)
 	config := readTestData(t, transformprocessorMultipleConfig)
@@ -299,6 +325,15 @@ func Test_transformProcessorDebugger_DebugMetrics_InvalidPayload(t *testing.T) {
 	payload := "invalid json"
 
 	_, err := debugger.DebugMetrics(config, payload)
+	assert.Error(t, err)
+}
+
+func Test_transformProcessorDebugger_DebugProfiles_InvalidPayload(t *testing.T) {
+	debugger := NewTransformProcessorDebugger().(*transformProcessorDebugger)
+	config := readTestData(t, transformprocessorConfig)
+	payload := "invalid json"
+
+	_, err := debugger.DebugProfiles(config, payload)
 	assert.Error(t, err)
 }
 

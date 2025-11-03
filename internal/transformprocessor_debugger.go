@@ -26,6 +26,7 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	"gopkg.in/yaml.v3"
 )
@@ -262,6 +263,71 @@ func (t transformProcessorDebugger) DebugMetrics(config, input string) (*Result,
 
 			result, err := newExecutionResult(t, ma.MarshalMetrics, func() (pmetric.Metrics, error) {
 				return t.consumer.ConsumeMetrics(&c.config, cpMetrics)
+			})
+			if err != nil {
+				return nil, err
+			}
+			result.Line = c.line
+			results = append(results, result)
+			if i+1 == len(cfgs) {
+				input = result.Value
+			}
+		}
+	}
+
+	marshal, err := json.Marshal(results)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Value = string(marshal)
+	return res, nil
+}
+
+func (t transformProcessorDebugger) DebugProfiles(config, input string) (*Result, error) {
+	configs, err := parseConfig[transformprocessor.Config](t.consumer.id, config, func() *transformprocessor.Config {
+		return t.consumer.factory.CreateDefaultConfig().(*transformprocessor.Config)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	res := &Result{}
+	res.Debug = true
+	var results []*Result
+	for _, cfg := range configs {
+		cfgs := make([]configWithLine, 0, len(configs)*len(cfg.Value.ProfileStatements))
+		for i, contextStatements := range cfg.Value.ProfileStatements {
+			pathIndex, err := findYAMLPathIndex(config, cfg.Key, "profile_statements", i)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find YAML path index: %w", err)
+			}
+			for i, sv := range contextStatements.Statements {
+				cp, err := cfg.clone()
+				if err != nil {
+					return nil, err
+				}
+				contextStatementsCp := contextStatements
+				contextStatementsCp.Statements = append(contextStatements.Statements[:i], []string{sv}...)
+				cp.ProfileStatements = nil
+				cp.ProfileStatements = append(cp.ProfileStatements, contextStatementsCp)
+				cfgs = append(cfgs, configWithLine{cp, int64(pathIndex.Content[i].Line)})
+			}
+		}
+
+		um := pprofile.JSONUnmarshaler{}
+		inputProfiles, err := um.UnmarshalProfiles([]byte(input))
+		if err != nil {
+			return nil, err
+		}
+
+		ma := pprofile.JSONMarshaler{}
+		for i, c := range cfgs {
+			cpProfiles := pprofile.NewProfiles()
+			inputProfiles.CopyTo(cpProfiles)
+
+			result, err := newExecutionResult(t, ma.MarshalProfiles, func() (pprofile.Profiles, error) {
+				return t.consumer.ConsumeProfiles(&c.config, cpProfiles)
 			})
 			if err != nil {
 				return nil, err

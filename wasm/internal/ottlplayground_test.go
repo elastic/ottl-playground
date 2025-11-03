@@ -145,6 +145,18 @@ func Test_ExecuteStatements(t *testing.T) {
 			expectedError: errors.New("ExecuteMetrics execution error"),
 			debug:         false,
 		},
+		{
+			name:           "Profiles Success",
+			otlpDataType:   "profiles",
+			executorFunc:   "ExecuteProfiles",
+			expectedOutput: "profile output",
+		},
+		{
+			name:          "Profiles Error",
+			otlpDataType:  "profiles",
+			executorFunc:  "ExecuteProfiles",
+			expectedError: errors.New("ExecuteProfileStatements execution error"),
+		},
 	}
 
 	var (
@@ -274,6 +286,18 @@ func Test_ExecuteStatements_Debug(t *testing.T) {
 			otlpDataType:  "metrics",
 			debugFunc:     "DebugMetrics",
 			expectedError: errors.New("DebugMetrics execution error"),
+		},
+		{
+			name:           "Debug Profiles Success",
+			otlpDataType:   "profiles",
+			debugFunc:      "DebugProfiles",
+			expectedOutput: "[{\"value\":\"debug profile output\",\"debug\":true,\"line\":30}]",
+		},
+		{
+			name:          "Debug Profiles Error",
+			otlpDataType:  "profiles",
+			debugFunc:     "DebugProfiles",
+			expectedError: errors.New("DebugProfiles execution error"),
 		},
 	}
 
@@ -405,6 +429,11 @@ func (m *MockExecutor) ExecuteMetrics(config, payload string) (*internal.Result,
 	return args.Get(0).(*internal.Result), args.Error(1)
 }
 
+func (m *MockExecutor) ExecuteProfiles(config, payload string) (*internal.Result, error) {
+	args := m.Called(config, payload)
+	return args.Get(0).(*internal.Result), args.Error(1)
+}
+
 func (m *MockExecutor) ObservedLogs() *internal.ObservedLogs {
 	args := m.Called()
 	return args.Get(0).(*internal.ObservedLogs)
@@ -436,6 +465,11 @@ func (m *MockDebugger) DebugTraces(config, payload string) (*internal.Result, er
 }
 
 func (m *MockDebugger) DebugMetrics(config, payload string) (*internal.Result, error) {
+	args := m.Called(config, payload)
+	return args.Get(0).(*internal.Result), args.Error(1)
+}
+
+func (m *MockDebugger) DebugProfiles(config, payload string) (*internal.Result, error) {
 	args := m.Called(config, payload)
 	return args.Get(0).(*internal.Result), args.Error(1)
 }

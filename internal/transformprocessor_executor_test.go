@@ -28,6 +28,7 @@ import (
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -69,9 +70,19 @@ func Test_TransformProcessorExecutor_ExecuteLogs(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, outputLogs)
 
-	val, ok := outputLogs.ResourceLogs().At(0).Resource().Attributes().Get("log_statements")
-	require.True(t, ok)
-	require.True(t, val.Bool())
+	var count int
+	for _, rl := range outputLogs.ResourceLogs().All() {
+		for _, sl := range rl.ScopeLogs().All() {
+			for _, lr := range sl.LogRecords().All() {
+				val, ok := lr.Attributes().Get("log_statements")
+				if assert.True(t, ok) && assert.Equal(t, "log_value", val.Str()) {
+					count++
+				}
+			}
+		}
+	}
+
+	require.Positive(t, count)
 }
 
 func Test_TransformProcessorExecutor_ExecuteTraces(t *testing.T) {
@@ -87,9 +98,19 @@ func Test_TransformProcessorExecutor_ExecuteTraces(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, outputTraces)
 
-	val, ok := outputTraces.ResourceSpans().At(0).Resource().Attributes().Get("trace_statements")
-	require.True(t, ok)
-	require.True(t, val.Bool())
+	var count int
+	for _, rs := range outputTraces.ResourceSpans().All() {
+		for _, ss := range rs.ScopeSpans().All() {
+			for _, sp := range ss.Spans().All() {
+				val, ok := sp.Attributes().Get("trace_statements")
+				if assert.True(t, ok) && assert.Equal(t, "trace_value", val.Str()) {
+					count++
+				}
+			}
+		}
+	}
+
+	require.Positive(t, count)
 }
 
 func Test_TransformProcessorExecutor_ExecuteMetrics(t *testing.T) {
@@ -105,9 +126,48 @@ func Test_TransformProcessorExecutor_ExecuteMetrics(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, outputMetrics)
 
-	val, ok := outputMetrics.ResourceMetrics().At(0).Resource().Attributes().Get("metric_statements")
-	require.True(t, ok)
-	require.True(t, val.Bool())
+	var count int
+	for _, rm := range outputMetrics.ResourceMetrics().All() {
+		for _, sm := range rm.ScopeMetrics().All() {
+			for _, me := range sm.Metrics().All() {
+				val, ok := me.Metadata().Get("metric_statements")
+				if assert.True(t, ok) && assert.Equal(t, "metric_value", val.Str()) {
+					count++
+				}
+			}
+		}
+	}
+
+	require.Positive(t, count)
+}
+
+func Test_TransformProcessorExecutor_ExecuteProfiles(t *testing.T) {
+	executor := NewTransformProcessorExecutor()
+	config := readTestData(t, transformprocessorConfig)
+	payload := readTestData(t, "profiles.json")
+
+	output, err := executor.ExecuteProfiles(config, payload)
+	require.NoError(t, err)
+
+	unmarshaler := &pprofile.JSONUnmarshaler{}
+	outputProfiles, err := unmarshaler.UnmarshalProfiles([]byte(output.Value))
+	require.NoError(t, err)
+	require.NotNil(t, outputProfiles)
+
+	var count int
+	for _, rp := range outputProfiles.ResourceProfiles().All() {
+		for _, sp := range rp.ScopeProfiles().All() {
+			for _, pr := range sp.Profiles().All() {
+				attrs := pprofile.FromAttributeIndices(outputProfiles.Dictionary().AttributeTable(), pr, outputProfiles.Dictionary())
+				val, ok := attrs.Get("profile_statements")
+				if assert.True(t, ok) && assert.Equal(t, "profile_value", val.Str()) {
+					count++
+				}
+			}
+		}
+	}
+
+	require.Positive(t, count)
 }
 
 func Test_TransformProcessorExecutor_ObservedLogs(t *testing.T) {
