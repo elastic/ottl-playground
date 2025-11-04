@@ -217,6 +217,7 @@ export class PlaygroundResultPanel extends LitElement {
     }
 
     this._showUnchanged = !this._showUnchanged;
+    el.checked = this._showUnchanged;
     htmlFormatter.showUnchanged(this._showUnchanged, this._resultPanel());
   }
 
@@ -227,6 +228,7 @@ export class PlaygroundResultPanel extends LitElement {
     }
 
     this._wrapLines = !this._wrapLines;
+    el.checked = this._wrapLines;
     [this._jsonViewEditor, this._logsViewEditor].forEach((view) => {
       if (view) {
         view.dispatch({
@@ -296,7 +298,7 @@ export class PlaygroundResultPanel extends LitElement {
     if (!this._logsViewEditor) {
       const selectionHighlight = EditorView.theme({
         '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection':
-          {backgroundColor: 'yellow'},
+          {backgroundColor: 'rgb(255 255 0 / 50%)'},
       });
 
       let extensions = [
