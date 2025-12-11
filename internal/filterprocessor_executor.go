@@ -27,31 +27,34 @@ var filterProcessorConfigExamples = []ConfigExample{
 	{
 		Name:   "Drop specific metric and value",
 		Signal: "metrics",
-		Config: "metrics:\n" +
-			"  datapoint:\n" +
-			`    - metric.name == "my.histogram" and count == 2`,
+		Config: "filter: \n" +
+			"  metrics:\n" +
+			"    datapoint:\n" +
+			`      - metric.name == "my.histogram" and count == 2`,
 	},
 	{
 		Name:   "Drop spans",
 		Signal: "traces",
-		Config: "error_mode: ignore\n" +
-			"traces:\n" +
-			"  span:\n" +
-			"    - kind == SPAN_KIND_INTERNAL",
+		Config: "filter: \n" +
+			"  traces:\n" +
+			"    span:\n" +
+			"      - kind == SPAN_KIND_INTERNAL",
 	},
 	{
 		Name:   "Drop data by resource attribute",
 		Signal: "traces",
-		Config: "traces:\n" +
-			"  span:\n" +
-			`    - IsMatch(resource.attributes["service.name"], "my-*")`,
+		Config: "filter: \n" +
+			"  traces:\n" +
+			"    span:\n" +
+			`      - IsMatch(resource.attributes["service.name"], "my-*")`,
 	},
 	{
 		Name:   "Drop debug and trace logs",
 		Signal: "logs",
-		Config: "logs:\n" +
-			"  log_record:\n" +
-			"    - severity_number != SEVERITY_NUMBER_UNSPECIFIED and severity_number < SEVERITY_NUMBER_INFO",
+		Config: "filter: \n" +
+			"  logs:\n" +
+			"    log_record:\n" +
+			"      - severity_number != SEVERITY_NUMBER_UNSPECIFIED and severity_number < SEVERITY_NUMBER_INFO",
 		Payload: `{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I'm an INFO log record"}},{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":5,"severityText":"Debug","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I'm a DEBUG log record"}}]}]}]}`,
 	},
 }

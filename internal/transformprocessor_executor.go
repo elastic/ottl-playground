@@ -27,116 +27,100 @@ var transformProcessorConfigExamples = []ConfigExample{
 	{
 		Name:   "Rename an attribute",
 		Signal: "traces",
-		Config: "error_mode: ignore\n" +
-			"trace_statements:\n" +
-			" - context: resource\n" +
-			"   statements:\n" +
-			`    - set(attributes["service.new_name"], attributes["service.name"])` + "\n" +
-			`    - delete_key(attributes, "service.name")`,
+		Config: "transform: \n" +
+			"  trace_statements:\n" +
+			`    - set(resource.attributes["service.new_name"], resource.attributes["service.name"])` + "\n" +
+			`    - delete_key(resource.attributes, "service.name")`,
 	},
 	{
 		Name:   "Copy field to attributes",
 		Signal: "logs",
-		Config: "error_mode: ignore\n" +
-			"log_statements:\n" +
-			" - context: log\n" +
-			"   statements:\n" +
-			`    - set(attributes["body"], body)`,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			`    - set(log.attributes["body"], log.body)`,
 	},
 	{
 		Name:   "Combine two attributes",
 		Signal: "logs",
-		Config: "error_mode: ignore\n" +
-			"log_statements:\n" +
-			" - context: log\n" +
-			"   statements:\n" +
-			`    - set(attributes["combined"], Concat([attributes["string.attribute"], attributes["boolean.attribute"]], " "))`,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			`    - set(log.attributes["combined"], Concat([log.attributes["string.attribute"], log.attributes["boolean.attribute"]], " "))`,
 	},
 	{
 		Name:   "Set a field",
 		Signal: "logs",
-		Config: "log_statements:\n" +
-			" - context: log\n" +
-			"   statements:\n" +
-			"    - set(severity_number, SEVERITY_NUMBER_INFO)\n" +
-			`    - set(severity_text, "INFO")`,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			"    - set(log.severity_number, SEVERITY_NUMBER_INFO)\n" +
+			`    - set(log.severity_text, "INFO")`,
 	},
 	{
 		Name:   "Parse unstructured log",
 		Signal: "logs",
-		Config: "log_statements:\n" +
-			" - context: log\n" +
-			"   statements:\n" +
-			`    - 'merge_maps(attributes, ExtractPatterns(body, "Example (?P<example_type>[a-z\\.]+)"), "upsert")'`,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			`    - 'merge_maps(log.attributes, ExtractPatterns(log.body, "Example (?P<example_type>[a-z\\.]+)"), "upsert")'`,
 	},
 	{
 		Name:   "Conditionally set a field",
 		Signal: "traces",
-		Config: "trace_statements:\n" +
-			" - context: span\n" +
-			"   statements:\n" +
-			`    - set(attributes["server"], true) where kind == SPAN_KIND_SERVER`,
+		Config: "transform: \n" +
+			"  trace_statements:\n" +
+			`   - set(span.attributes["server"], true) where span.kind == SPAN_KIND_SERVER`,
 	},
 	{
 		Name:   "Update a resource attribute",
 		Signal: "logs",
-		Config: "log_statements:\n" +
-			" - context: resource\n" +
-			"   statements:\n" +
-			`    - set(attributes["service.name"], "mycompany-application") `,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			`    - set(resource.attributes["service.name"], "mycompany-application") `,
 	},
 	{
 		Name:   "Parse and manipulate JSON",
 		Signal: "logs",
-		Config: "log_statements:\n" +
-			" - context: log\n" +
-			"   statements:\n" +
-			`    - merge_maps(cache, ParseJSON(body), "upsert") where IsMatch(body, "^\\{")` + "\n" +
-			`    - set(time, Time(cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))` + "\n" +
-			`    - set(severity_text, cache["level"])` + "\n" +
-			`    - set(body, cache["message"])`,
+		Config: "transform: \n" +
+			"  log_statements:\n" +
+			`    - merge_maps(log.cache, ParseJSON(log.body), "upsert") where IsMatch(log.body, "^\\{")` + "\n" +
+			`    - set(log.time, Time(log.cache["timestamp"], "%Y-%m-%dT%H:%M:%SZ"))` + "\n" +
+			`    - set(log.severity_text, log.cache["level"])` + "\n" +
+			`    - set(log.body, log.cache["message"])`,
 		Payload: `{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"{\"timestamp\": \"2025-03-01T12:12:14Z\", \"level\":\"INFO\",\"message\":\"Elapsed time: 10ms\"}"}}]}]}]}`,
 	},
 	{
 		Name:   "Parse and manipulate Timestamps",
 		Signal: "metrics",
-		Config: "metric_statements:\n" +
-			" - context: resource\n" +
-			"   statements:\n" +
-			`    - set(attributes["date"], String(TruncateTime(Time(attributes["timestamp"], "%Y-%m-%dT%H:%M:%SZ"), Duration("24h"))))`,
+		Config: "transform: \n" +
+			"  metric_statements:\n" +
+			`    - set(resource.attributes["date"], String(TruncateTime(Time(resource.attributes["timestamp"], "%Y-%m-%dT%H:%M:%SZ"), Duration("24h"))))`,
 	},
 	{
 		Name:   "Manipulate strings",
 		Signal: "metrics",
-		Config: "metric_statements:\n" +
-			" - context: scope\n" +
-			"   statements:\n" +
-			`    - set(resource.attributes["service.name"], ConvertCase(Concat([resource.attributes["service.name"], version], ".v"), "upper"))`,
+		Config: "transform: \n" +
+			"  metric_statements:\n" +
+			`    - set(resource.attributes["service.name"], ConvertCase(Concat([resource.attributes["service.name"], scope.version], ".v"), "upper"))`,
 	},
 	{
 		Name:   "Scale a metric",
 		Signal: "metrics",
-		Config: "metric_statements:\n" +
-			" - context: metric\n" +
-			"   statements:\n" +
-			`    - scale_metric(10.0, "kWh") where name == "my.gauge"`,
+		Config: "transform: \n" +
+			"  metric_statements:\n" +
+			`    - scale_metric(10.0, "kWh") where metric.name == "my.gauge"`,
 	},
 	{
 		Name:   "Dynamically rename a metric",
 		Signal: "metrics",
-		Config: "metric_statements:\n" +
-			" - context: metric\n" +
-			"   statements:\n" +
-			`     - replace_pattern(name, "my.(.+)", "metrics.$$1")`,
+		Config: "transform: \n" +
+			"  metric_statements:\n" +
+			`    - replace_pattern(metric.name, "my.(.+)", "metrics.$$1")`,
 	},
 	{
 		Name:   "Aggregate a metric",
 		Signal: "metrics",
-		Config: "metric_statements:\n" +
-			" - context: metric\n" +
-			"   statements:\n" +
-			`     - copy_metric(name="my.second.histogram") where name == "my.histogram"` + "\n" +
-			`     - aggregate_on_attributes("sum", []) where name == "my.second.histogram"`,
+		Config: "transform: \n" +
+			"  metric_statements:\n" +
+			`    - copy_metric(name="my.second.histogram") where metric.name == "my.histogram"` + "\n" +
+			`    - aggregate_on_attributes("sum", []) where metric.name == "my.second.histogram"`,
 	},
 }
 
