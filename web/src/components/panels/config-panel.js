@@ -375,6 +375,8 @@ export class PlaygroundConfigPanel extends LitElement {
     this._notifyDebuggingLineChange(
       this.debuggingInfo?.lines?.[this._debuggingLineOffset - 1]
     );
+
+    this._stopDebuggingClick();
   }
 
   _nextDebugLineClick() {
