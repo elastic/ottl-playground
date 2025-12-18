@@ -313,6 +313,7 @@ export class PlaygroundResultPanel extends LitElement {
         extensions.push(this._wrapLinesCompartment.of([]));
       }
 
+      this._resultPanel().innerHTML = '';
       this._logsViewEditor = new EditorView({
         extensions: extensions,
         parent: this._resultPanel(),
