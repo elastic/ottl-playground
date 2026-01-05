@@ -24,6 +24,7 @@ import {Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
+// forceLinting doesn't work reliably, using document change workaround instead
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {
@@ -35,6 +36,7 @@ import {
   Compartment,
 } from '@codemirror/state';
 import {gutter, GutterMarker, Decoration, ViewPlugin} from '@codemirror/view';
+import {ottlAutocompletion, ottlLinting} from '../ottl-completion.js';
 
 export class PlaygroundConfigPanel extends LitElement {
   static properties = {
@@ -634,6 +636,8 @@ export class PlaygroundConfigPanel extends LitElement {
         this._editorBreakpointGutterCompartment.of(this.breakpointGutter),
         this._editorReadOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
         debuggingLinesExt,
+        ottlAutocompletion(),
+        ottlLinting(),
         EditorView.updateListener.of((v) => {
           if (v.docChanged) {
             this._notifyConfigChange(this.config);
@@ -642,6 +646,25 @@ export class PlaygroundConfigPanel extends LitElement {
       ],
       parent: this.shadowRoot.querySelector('#config-input'),
     });
+  }
+
+  /**
+   * Force re-linting the editor content.
+   * Call this when WASM version changes to re-validate with new validator.
+   */
+  forceLint() {
+    if (this._editor) {
+      // Workaround: Insert and remove a space to force document change
+      // This triggers the linter to see a new document version
+      // (forceLinting from @codemirror/lint doesn't work reliably)
+      const docLength = this._editor.state.doc.length;
+      this._editor.dispatch({
+        changes: {from: docLength, insert: ' '},
+      });
+      this._editor.dispatch({
+        changes: {from: docLength, to: docLength + 1, insert: ''},
+      });
+    }
   }
 }
 

@@ -28,6 +28,7 @@ import {playgroundStyles} from './playground.styles';
 import {nothing} from 'lit';
 import {getJsonPayloadType} from './utils/json-payload';
 import {base64ToUtf8, utf8ToBase64} from './utils/base64';
+import {clearOTTLMetadataCache, setValidationContext} from './ottl-completion.js';
 
 export class Playground extends LitElement {
   static properties = {
@@ -104,14 +105,28 @@ export class Playground extends LitElement {
     ) {
       this._executor = this._executors?.find((p) => p.id === this.executor);
     }
+    // Update validation context when evaluator or payload changes
+    if (changedProperties.has('evaluator') || changedProperties.has('payload')) {
+      this._updateValidationContext();
+    }
     super.willUpdate(changedProperties);
   }
 
-  updated(changedProperties) {
+updated(changedProperties) {
     if (changedProperties.has('executor')) {
       this._debuggingInfo = null;
     }
     super.updated(changedProperties);
+  }
+
+  _updateValidationContext() {
+    try {
+      const payloadType = getJsonPayloadType(this.payload);
+      setValidationContext(payloadType, this.executor || 'transform_processor', this.payload);
+    } catch (e) {
+      // If payload is invalid, default to logs with empty payload
+      setValidationContext('logs', this.executor || 'transform_processor', '{}');
+    }
   }
 
   _initState() {
@@ -270,6 +285,8 @@ export class Playground extends LitElement {
     };
 
     window.addEventListener('playground-wasm-ready', () => {
+      // Clear OTTL metadata cache so completions refresh for new WASM version
+      clearOTTLMetadataCache();
       // eslint-disable-next-line no-undef
       this._executors = getExecutors();
       if (!this._executors) {
@@ -287,6 +304,13 @@ export class Playground extends LitElement {
           }
         }
       }
+      // Force re-linting with new WASM validator after version change
+      this.updateComplete.then(() => {
+        const configPanel = this.shadowRoot?.querySelector('#config-code-panel');
+        if (configPanel?.forceLint) {
+          configPanel.forceLint();
+        }
+      });
     });
 
     this.addEventListener('playground-run-requested', () => {
