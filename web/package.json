@@ -17,10 +17,11 @@
   "dependencies": {
     "@codemirror/lang-json": "^6.0.1",
     "@codemirror/lang-yaml": "^6.1.1",
+    "@codemirror/lint": "^6.9.2",
     "codemirror": "^6.0.1",
-    "split.js": "^1.6.5",
     "jsondiffpatch": "^0.6.0",
-    "lit": "^3.2.1"
+    "lit": "^3.2.1",
+    "split.js": "^1.6.5"
   },
   "scripts": {
     "build": "npm run lint:eslint && npm run lint:lit-analyzer && rollup -c",

@@ -26,6 +26,7 @@ import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
+import {ottlAutocompletion, ottlLinting} from '../ottl-completion.js';
 
 export class PlaygroundConfigPanel extends LitElement {
   static properties = {
@@ -158,6 +159,8 @@ export class PlaygroundConfigPanel extends LitElement {
         ),
         EditorView.lineWrapping,
         yaml(),
+        ottlAutocompletion(),
+        ottlLinting(),
         EditorView.updateListener.of((v) => {
           if (v.docChanged) {
             this._notifyConfigChange(this.config);

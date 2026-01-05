@@ -28,6 +28,7 @@ import {playgroundStyles} from './playground.styles';
 import {nothing} from 'lit';
 import {getJsonPayloadType} from './utils/json-payload';
 import {base64ToUtf8, utf8ToBase64} from './utils/base64';
+import {clearOTTLMetadataCache, setValidationContext} from './ottl-completion.js';
 
 export class Playground extends LitElement {
   static properties = {
@@ -98,7 +99,21 @@ export class Playground extends LitElement {
     if (changedProperties.has('_evaluators')) {
       this._computeEvaluatorsDocsURL();
     }
+    // Update validation context when evaluator or payload changes
+    if (changedProperties.has('evaluator') || changedProperties.has('payload')) {
+      this._updateValidationContext();
+    }
     super.willUpdate(changedProperties);
+  }
+
+  _updateValidationContext() {
+    try {
+      const payloadType = getJsonPayloadType(this.payload);
+      setValidationContext(payloadType, this.evaluator || 'transform', this.payload);
+    } catch (e) {
+      // If payload is invalid, default to logs with empty payload
+      setValidationContext('logs', this.evaluator || 'transform', '{}');
+    }
   }
 
   _initState() {
@@ -249,6 +264,8 @@ export class Playground extends LitElement {
 
   _addEventListeners() {
     window.addEventListener('playground-wasm-ready', () => {
+      // Clear OTTL metadata cache so completions refresh for new WASM version
+      clearOTTLMetadataCache();
       // eslint-disable-next-line no-undef
       this._evaluators = statementsExecutors();
       if (!this._evaluators) {
