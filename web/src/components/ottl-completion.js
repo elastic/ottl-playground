@@ -206,6 +206,36 @@ function enumCompletions(enums) {
 }
 
 /**
+ * Get completion context using the WASM lexer-based analyzer.
+ * Falls back to simple heuristics if WASM function is not available.
+ */
+function getCompletionContextFromWasm(textBefore) {
+  // Try WASM-based lexer analysis first
+  if (typeof window.getCompletionContext === 'function') {
+    try {
+      return window.getCompletionContext(textBefore);
+    } catch (e) {
+      console.warn('WASM completion context failed:', e);
+    }
+  }
+
+  // Fallback to simple heuristics
+  const openParens = (textBefore.match(/\(/g) || []).length;
+  const closeParens = (textBefore.match(/\)/g) || []).length;
+
+  return {
+    inFunctionArgs: openParens > closeParens,
+    functionName: '',
+    argIndex: 0,
+    afterDot: textBefore.match(/\.\s*$/) !== null,
+    afterWhere: false,
+    atStatementStart: textBefore.match(/^\s*-\s*['"]?\s*$/) !== null,
+    lastToken: '',
+    parenDepth: openParens - closeParens,
+  };
+}
+
+/**
  * Main completion source for OTTL.
  */
 function ottlCompletionSource(context) {
@@ -228,11 +258,17 @@ function ottlCompletionSource(context) {
   const line = context.state.doc.lineAt(context.pos);
   const textBefore = line.text.slice(0, context.pos - line.from);
 
+  // Use lexer-based context detection (handles strings, nested parens correctly)
+  // Extract just the OTTL statement part (after '- ' or '- "')
+  const stmtMatch = textBefore.match(/^\s*-\s*['"]?(.*)$/);
+  const stmtText = stmtMatch ? stmtMatch[1] : textBefore;
+  const completionCtx = getCompletionContextFromWasm(stmtText);
+
   // Determine what kind of completions to provide
   let completions = [];
 
   // Check if we're typing a path continuation (after a dot)
-  if (textBefore.match(/\.\s*$/)) {
+  if (completionCtx.afterDot) {
     // Path continuation - filter paths by prefix
     const match = textBefore.match(/([\w.]+)\.\s*$/);
     if (match) {
@@ -243,25 +279,20 @@ function ottlCompletionSource(context) {
     }
   }
   // At the start of a statement (after '- ' or '- "')
-  else if (textBefore.match(/^\s*-\s*['"]?\s*$/)) {
+  else if (completionCtx.atStatementStart || textBefore.match(/^\s*-\s*['"]?\s*$/)) {
     // Suggest functions (primarily editors for statements)
     completions = functionCompletions(metadata.functions);
   }
-  // Inside function arguments
-  else if (textBefore.includes('(')) {
-    const openParens = (textBefore.match(/\(/g) || []).length;
-    const closeParens = (textBefore.match(/\)/g) || []).length;
-
-    if (openParens > closeParens) {
-      // Inside function arguments - suggest paths, enums, and converters
-      completions = [
-        ...pathCompletions(contextData.paths),
-        ...enumCompletions(contextData.enums || []),
-        ...functionCompletions(metadata.functions.filter((f) => !f.isEditor)),
-      ];
-    }
+  // Inside function arguments (lexer-based detection handles strings correctly)
+  else if (completionCtx.inFunctionArgs) {
+    // Inside function arguments - suggest paths, enums, and converters
+    completions = [
+      ...pathCompletions(contextData.paths),
+      ...enumCompletions(contextData.enums || []),
+      ...functionCompletions(metadata.functions.filter((f) => !f.isEditor)),
+    ];
   }
-  // Default - show all completions
+  // After 'where' clause or balanced parens - show all completions
   else {
     completions = [
       ...functionCompletions(metadata.functions),
@@ -761,11 +792,6 @@ const goToDefinitionHoverStyle = EditorView.domEventHandlers({
       }
     }
     editorDom.style.cursor = '';
-  },
-  keydown(event) {
-    if (event.key === 'Meta' || event.key === 'Control') {
-      // Could add visual feedback here
-    }
   },
   keyup(event, view) {
     if (event.key === 'Meta' || event.key === 'Control') {

@@ -116,6 +116,17 @@ func validateStatementsWrapper() js.Func {
 	})
 }
 
+func getCompletionContextWrapper() js.Func {
+	return js.FuncOf(func(_ js.Value, args []js.Value) any {
+		defer handlePanic()
+		if len(args) != 1 {
+			return nil
+		}
+		statement := args[0].String()
+		return js.ValueOf(internal.GetCompletionContext(statement))
+	})
+}
+
 func main() {
 	// Existing exports
 	js.Global().Set("executeStatements", executeStatementsWrapper())
@@ -129,6 +140,9 @@ func main() {
 
 	// Validation export
 	js.Global().Set("validateStatements", validateStatementsWrapper())
+
+	// Completion context export (lexer-based)
+	js.Global().Set("getCompletionContext", getCompletionContextWrapper())
 
 	<-make(chan struct{})
 }

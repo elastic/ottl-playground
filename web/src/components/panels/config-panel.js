@@ -24,6 +24,7 @@ import {Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
+import {forceLinting} from '@codemirror/lint';
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {ottlAutocompletion, ottlLinting} from '../ottl-completion.js';
@@ -169,6 +170,16 @@ export class PlaygroundConfigPanel extends LitElement {
       ],
       parent: this.shadowRoot.querySelector('#config-input'),
     });
+  }
+
+  /**
+   * Force re-linting the editor content.
+   * Call this when WASM version changes to re-validate with new validator.
+   */
+  forceLint() {
+    if (this._editor) {
+      forceLinting(this._editor);
+    }
   }
 }
 

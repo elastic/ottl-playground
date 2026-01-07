@@ -3,6 +3,7 @@ module github.com/elastic/ottl-playground
 go 1.24.0
 
 require (
+	github.com/alecthomas/participle/v2 v2.1.4
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl v0.138.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.138.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.138.0
@@ -21,7 +22,6 @@ require (
 )
 
 require (
-	github.com/alecthomas/participle/v2 v2.1.4 // indirect
 	github.com/antchfx/xmlquery v1.5.0 // indirect
 	github.com/antchfx/xpath v1.3.5 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

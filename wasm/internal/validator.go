@@ -36,16 +36,6 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl/ottlfuncs"
 )
 
-// ValidationDiagnostic represents a validation error with position information.
-type ValidationDiagnostic struct {
-	Message   string `json:"message"`
-	Severity  string `json:"severity"`
-	Line      int    `json:"line"`
-	Column    int    `json:"column"`
-	EndLine   int    `json:"endLine"`
-	EndColumn int    `json:"endColumn"`
-}
-
 // StatementLocation tracks the location of a statement in the YAML config.
 type StatementLocation struct {
 	Statement string
@@ -289,14 +279,6 @@ func validateScopeStatement(statement string, settings component.TelemetrySettin
 // extractErrorColumnFromMessage tries to extract column position from the error message.
 // Returns (start column offset, end column offset) within the statement.
 func extractErrorColumnFromMessage(errMsg, statement string) (int, int) {
-	// Look for position patterns from participle parser
-	// Format: "1:5" or "at position X"
-	posPattern := regexp.MustCompile(`(\d+):(\d+)`)
-	if matches := posPattern.FindStringSubmatch(errMsg); len(matches) > 2 {
-		// col, _ := strconv.Atoi(matches[2])
-		// return col - 1, col + 10
-	}
-
 	// Try to find the problematic segment in the error
 	// e.g., 'segment "boy" from path'
 	segmentPattern := regexp.MustCompile(`segment "(\w+)"`)

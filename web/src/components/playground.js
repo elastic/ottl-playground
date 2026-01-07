@@ -277,6 +277,13 @@ export class Playground extends LitElement {
           this.evaluator = this._evaluators[0]?.id;
         }
       }
+      // Force re-linting with new WASM validator after version change
+      this.updateComplete.then(() => {
+        const configPanel = this.shadowRoot?.querySelector('#config-code-panel');
+        if (configPanel?.forceLint) {
+          configPanel.forceLint();
+        }
+      });
     });
 
     this.addEventListener('playground-run-requested', () => {

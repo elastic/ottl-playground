@@ -47,7 +47,7 @@ update-processor-version:
 build-wasm:
 	$(eval PROCESSORS_VERSION ?= $(shell $(GOCMD) run ci-tools/main.go get-version))
 	$(GOCMD) run ci-tools/main.go generate-constants -version=$(PROCESSORS_VERSION)
-	cd wasm; GOARCH=wasm GOOS=js $(GOCMD) build -ldflags $(GO_BUILD_LDFLAGS) -o $(WASM_OUTPUT_DIR)/ottlplayground-$(PROCESSORS_VERSION).wasm
+	cd wasm; GOARCH=wasm GOOS=js $(GOCMD) build -trimpath -ldflags $(GO_BUILD_LDFLAGS) -o $(WASM_OUTPUT_DIR)/ottlplayground-$(PROCESSORS_VERSION).wasm
 
 .PHONY: register-version
 register-version:
