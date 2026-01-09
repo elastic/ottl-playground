@@ -312,7 +312,7 @@ func (e *defaultExecutor[C]) ExecuteMetrics(config, input string) (*Result, erro
 			if len(cfgs) > 1 {
 				e.consumer.TelemetrySettings().Logger.Sugar().Debugf("[playground] Running configuration: %s", cfg.Key)
 			}
-			transformedMetrics, err = e.consumer.ConsumeMetrics(cfg.Value, inputMetrics)
+			transformedMetrics, err = e.consumer.ConsumeMetrics(cfg.Value, transformedMetrics)
 			if err != nil {
 				return pmetric.Metrics{}, err
 			}
