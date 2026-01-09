@@ -90,11 +90,11 @@ type Metadata struct {
 	Debuggable       bool                             `json:"debuggable"`
 }
 
-// MedataOption is a function that modifies the Metadata configuration.
-type medataOption func(*Metadata) error
+// metadataOption is a function that modifies the Metadata configuration.
+type metadataOption func(*Metadata) error
 
 // enableResultViews enables the specified result views in the metadata.
-func enableResultViews(views ...ResultView) medataOption {
+func enableResultViews(views ...ResultView) metadataOption {
 	return func(metadata *Metadata) error {
 		for _, cfg := range metadata.ResultViewConfig {
 			cfg.Enabled = false
@@ -111,7 +111,7 @@ func enableResultViews(views ...ResultView) medataOption {
 }
 
 // disableResultViews disables the specified result views in the metadata.
-func disableResultViews(views ...ResultView) medataOption {
+func disableResultViews(views ...ResultView) metadataOption {
 	return func(metadata *Metadata) error {
 		for _, v := range views {
 			cfg, ok := metadata.ResultViewConfig[v]
@@ -125,7 +125,7 @@ func disableResultViews(views ...ResultView) medataOption {
 }
 
 // withConfigExamples adds examples to the executor metadata.
-func withConfigExamples(examples ...ConfigExample) medataOption {
+func withConfigExamples(examples ...ConfigExample) metadataOption {
 	return func(metadata *Metadata) error {
 		metadata.Examples.Configs = append(metadata.Examples.Configs, examples...)
 		return nil
@@ -133,14 +133,14 @@ func withConfigExamples(examples ...ConfigExample) medataOption {
 }
 
 // withPayloadExamples adds examples to the executor metadata.
-func withPayloadExamples(examples ...PayloadExample) medataOption {
+func withPayloadExamples(examples ...PayloadExample) metadataOption {
 	return func(metadata *Metadata) error {
 		metadata.Examples.Payloads = append(metadata.Examples.Payloads, examples...)
 		return nil
 	}
 }
 
-func newMetadata(ct ComponentType, id, name, path, docsURL string, options ...medataOption) *Metadata {
+func newMetadata(ct ComponentType, id, name, path, docsURL string, options ...metadataOption) *Metadata {
 	meta := Metadata{
 		Type:             ct,
 		ID:               id,
