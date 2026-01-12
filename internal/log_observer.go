@@ -20,8 +20,10 @@
 package internal
 
 import (
-	"go.uber.org/zap/zapcore"
+	"strings"
 	"sync"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type LoggedEntry struct {
@@ -51,6 +53,15 @@ func (o *ObservedLogs) All() []LoggedEntry {
 	copy(ret, o.logs)
 	o.mu.RUnlock()
 	return ret
+}
+
+func (o *ObservedLogs) TakeAllString() string {
+	all := o.TakeAll()
+	var s strings.Builder
+	for _, entry := range all {
+		s.WriteString(entry.ConsoleEncodedEntry())
+	}
+	return s.String()
 }
 
 func (o *ObservedLogs) TakeAll() []LoggedEntry {

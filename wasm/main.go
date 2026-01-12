@@ -23,42 +23,46 @@ package main
 
 import (
 	"fmt"
-
 	"syscall/js"
 
 	"github.com/elastic/ottl-playground/wasm/internal"
 )
 
 func handlePanic() {
+	defer func() {
+		recover()
+	}()
 	if r := recover(); r != nil {
-		fmt.Println("recovered from", r)
+		js.Global().Call("wasmPanicHandler", fmt.Sprintf("An error occurred in the WASM module: %v", r))
+		js.Global().Get("console").Call("error", "stack trace:", js.Global().Get("Error").New().Get("stack").String())
 	}
 }
 
-func executeStatementsWrapper() js.Func {
+func executeWrapper() js.Func {
 	return js.FuncOf(func(_ js.Value, args []js.Value) any {
 		defer handlePanic()
-		if len(args) != 4 {
-			return internal.NewErrorResult("invalid number of arguments", "")
+		if len(args) != 5 {
+			return map[string]any{"error": "invalid number of arguments"}
 		}
 
 		config := args[0].String()
 		ottlDataType := args[1].String()
 		ottlDataPayload := args[2].String()
 		executorName := args[3].String()
-		return js.ValueOf(internal.ExecuteStatements(config, ottlDataType, ottlDataPayload, executorName))
+		debug := args[4].Bool()
+		return js.ValueOf(internal.Execute(config, ottlDataType, ottlDataPayload, executorName, debug))
 	})
 }
 
-func getEvaluatorsWrapper() js.Func {
+func getExecutorsWrapper() js.Func {
 	return js.FuncOf(func(_ js.Value, _ []js.Value) any {
 		defer handlePanic()
-		return js.ValueOf(internal.StatementsExecutors())
+		return js.ValueOf(internal.Executors())
 	})
 }
 
 func main() {
-	js.Global().Set("executeStatements", executeStatementsWrapper())
-	js.Global().Set("statementsExecutors", getEvaluatorsWrapper())
+	js.Global().Set("execute", executeWrapper())
+	js.Global().Set("getExecutors", getExecutorsWrapper())
 	<-make(chan struct{})
 }

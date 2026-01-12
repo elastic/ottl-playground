@@ -1,0 +1,27 @@
+transform:
+  trace_statements:
+    - context: resource
+      statements:
+        - set(attributes["trace_statements"], true)
+  log_statements:
+    - context: resource
+      statements:
+        - set(attributes["log_statements"], true)
+  metric_statements:
+    - context: resource
+      statements:
+        - set(attributes["metric_statements"], true)
+
+transform/multiple:
+  trace_statements:
+    - context: resource
+      statements:
+        - set(attributes["trace_multiple"], true)
+  log_statements:
+    - context: resource
+      statements:
+        - set(attributes["log_multiple"], true)
+  metric_statements:
+    - context: resource
+      statements:
+        - set(attributes["metric_multiple"], true)

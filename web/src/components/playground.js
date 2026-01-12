@@ -20,7 +20,7 @@
 import {html, LitElement} from 'lit-element';
 import '../wasm_exec.js';
 import Split from 'split.js';
-import {CONFIG_EXAMPLES, PAYLOAD_EXAMPLES} from './examples';
+import {DEFAULT_PAYLOAD_EXAMPLES, DEFAULT_PAYLOADS} from './examples';
 import './panels/config-panel';
 import './panels/payload-panel';
 import './panels/result-panel';
@@ -35,18 +35,20 @@ export class Playground extends LitElement {
     config: {type: String},
     payload: {type: String},
     version: {type: String},
-    evaluator: {type: String},
-    hideEvaluators: {type: Boolean, attribute: 'hide-evaluators'},
+    executor: {type: String},
+    hideExecutors: {type: Boolean, attribute: 'hide-executors'},
     hideRunButton: {type: Boolean, attribute: 'hide-run-button'},
     disableShareLink: {type: Boolean, attribute: 'disable-share-link'},
     baseUrl: {type: String, attribute: 'base-url'},
 
     _loading: {state: true},
     _loadingWasm: {state: true},
-    _evaluators: {state: true},
-    _evaluatorsDocsURL: {state: true},
+    _executors: {state: true},
+    _executor: {state: true},
     _versions: {state: true},
     _result: {state: true},
+    _activeResult: {state: true},
+    _debuggingInfo: {state: true},
   };
 
   constructor() {
@@ -57,11 +59,12 @@ export class Playground extends LitElement {
 
   _initDefaultValues() {
     this._loading = true;
-    this._hideEvaluators = false;
+    this._hideExecutors = false;
     this.hideRunButton = false;
     this.disableShareLink = false;
     this.payload = '{}';
     this.baseUrl = '';
+    this.executor = 'transform_processor';
   }
 
   static get styles() {
@@ -71,7 +74,7 @@ export class Playground extends LitElement {
   get state() {
     return {
       version: this.version,
-      evaluator: this.evaluator,
+      executor: this.executor,
       payload: this.payload,
       config: this.config,
     };
@@ -79,15 +82,15 @@ export class Playground extends LitElement {
 
   set state(state) {
     this.version = state.version;
-    this.evaluator = state.evaluator;
+    this.executor = state.executor;
     this.payload = state.payload;
     this.config = state.config;
     // Reset the payload example dropdown
-    this._setSelectedPayloadExample('');
+    this._clearSelectedPayloadExample();
   }
 
   firstUpdated() {
-    this._spitComponents();
+    this._splitComponents();
     this._loading = false;
     this._fetchWebAssemblyVersions().then(() => {
       this._initState();
@@ -95,10 +98,20 @@ export class Playground extends LitElement {
   }
 
   willUpdate(changedProperties) {
-    if (changedProperties.has('_evaluators')) {
-      this._computeEvaluatorsDocsURL();
+    if (
+      changedProperties.has('_executors') ||
+      changedProperties.has('executor')
+    ) {
+      this._executor = this._executors?.find((p) => p.id === this.executor);
     }
     super.willUpdate(changedProperties);
+  }
+
+  updated(changedProperties) {
+    if (changedProperties.has('executor')) {
+      this._debuggingInfo = null;
+    }
+    super.updated(changedProperties);
   }
 
   _initState() {
@@ -111,7 +124,8 @@ export class Playground extends LitElement {
     if (urlStateData) {
       this.state = {
         version: version,
-        evaluator: urlStateData?.evaluator,
+        // older versions uses "evaluator" instead of "executor"
+        executor: urlStateData?.executor || urlStateData?.evaluator,
         payload: urlStateData?.payload ?? '{}',
         config: urlStateData?.config,
       };
@@ -151,19 +165,11 @@ export class Playground extends LitElement {
     }
   }
 
-  _setSelectedPayloadExample(example) {
+  _clearSelectedPayloadExample() {
     let panel = this.shadowRoot.querySelector('#payload-code-panel');
     if (panel) {
-      panel.selectedExample = example;
+      panel.clearSelectedExample();
     }
-  }
-
-  _computeEvaluatorsDocsURL() {
-    let docsURLs = {};
-    this._evaluators?.forEach((it) => {
-      docsURLs[it.id] = it.docsURL ?? null;
-    });
-    this._evaluatorsDocsURL = docsURLs;
   }
 
   render() {
@@ -181,11 +187,11 @@ export class Playground extends LitElement {
           <playground-controls
             id="playground-controls"
             ?hide-run-button="${this.hideRunButton}"
-            ?hide-evaluators=${this._hideEvaluators}
+            ?hide-executors=${this._hideExecutors}
             ?hide-copy-link-button="${this.disableShareLink}"
             ?loading="${this._loadingWasm}"
-            evaluator="${this.evaluator}"
-            evaluators="${JSON.stringify(this._evaluators)}"
+            executor="${this.executor}"
+            executors="${JSON.stringify(this._executors)}"
             version="${this.version}"
             versions="${JSON.stringify(this._versions)}"
             @copy-link-click="${this._handleCopyLinkClick}"
@@ -215,20 +221,26 @@ export class Playground extends LitElement {
               <div id="config-code-panel-container">
                 <playground-config-panel
                   id="config-code-panel"
-                  examples="${JSON.stringify(CONFIG_EXAMPLES[this.evaluator])}"
+                  examples="${JSON.stringify(this._getConfigExamples())}"
                   config="${this.config}"
                   @config-changed="${(e) => (this.config = e.detail.value)}"
-                  config-docs-url="${this._evaluatorsDocsURL?.[this.evaluator]}"
+                  config-docs-url="${this._executor?.docsURL}"
                   @config-example-changed="${this._handleConfigExampleChanged}"
+                  ?debugger-enabled="${this._executor?.debuggable === true}"
+                  debugging-info="${JSON.stringify(this._debuggingInfo)}"
+                  @debugging-line-changed="${this._handleDebuggingLineChanged}"
+                  @debugging-stop-requested="${this
+                    ._handDebuggingStopRequested}"
                 >
-                  >
                 </playground-config-panel>
               </div>
               <div id="payload-code-panel-container">
                 <playground-payload-panel
                   id="payload-code-panel"
                   payload="${this.payload}"
+                  examples="${JSON.stringify(this._getPayloadExamples())}"
                   @payload-changed="${(e) => (this.payload = e.detail.value)}"
+                  ?read-only="${this._debuggingInfo?.debugging === true}"
                 >
                 </playground-payload-panel>
               </div>
@@ -238,7 +250,11 @@ export class Playground extends LitElement {
             <playground-result-panel
               id="result-panel"
               payload="${this.payload}"
-              result="${JSON.stringify(this._result)}"
+              result="${JSON.stringify(this._activeResult)}"
+              view-config="${JSON.stringify(
+                this._executors?.find((p) => p.id === this.executor)
+                  ?.resultViewConfig || {}
+              )}"
             >
             </playground-result-panel>
           </div>
@@ -248,16 +264,27 @@ export class Playground extends LitElement {
   }
 
   _addEventListeners() {
+    let me = this;
+    window.wasmPanicHandler = (error) => {
+      me._getResultPanel().showErrorMessage(error);
+    };
+
     window.addEventListener('playground-wasm-ready', () => {
       // eslint-disable-next-line no-undef
-      this._evaluators = statementsExecutors();
-      if (!this._evaluators) {
-        this.evaluator = '';
+      this._executors = getExecutors();
+      if (!this._executors) {
+        this.executor = '';
+        this._executor = null;
       } else {
-        if (!this.evaluator) {
-          this.evaluator = this._evaluators[0]?.id;
-        } else if (!this._evaluators.some((e) => e.id === this.evaluator)) {
-          this.evaluator = this._evaluators[0]?.id;
+        if (!this.executor) {
+          this.executor = this._executors[0]?.id;
+          this._executor = this._executors[0];
+        } else {
+          let exec = this._executors.find((e) => e.id === this.executor);
+          if (!exec) {
+            this.executor = this._executors[0]?.id;
+            this._executor = this._executors[0];
+          }
         }
       }
     });
@@ -266,8 +293,8 @@ export class Playground extends LitElement {
       this._runStatements();
     });
 
-    this.addEventListener('evaluator-changed', (e) => {
-      this.evaluator = e.detail.value;
+    this.addEventListener('executor-changed', (e) => {
+      this.executor = e.detail.value;
     });
 
     this.addEventListener('version-changed', (e) => {
@@ -308,7 +335,7 @@ export class Playground extends LitElement {
     );
   }
 
-  _spitComponents() {
+  _splitComponents() {
     Split(
       [
         this.shadowRoot.querySelector('#config-code-panel-container'),
@@ -331,18 +358,23 @@ export class Playground extends LitElement {
     try {
       payloadType = getJsonPayloadType(this.payload);
     } catch (e) {
-      this.shadowRoot
-        .querySelector('#result-panel')
-        .showErrorMessage(`Invalid OTLP JSON payload: ${e}`);
+      this._getResultPanel().showErrorMessage(
+        `Invalid OTLP JSON payload: ${e}`
+      );
       return;
     }
 
+    let debug = this.shadowRoot
+      ?.querySelector('#config-code-panel')
+      ?.hasBreakpoints();
+
     // eslint-disable-next-line no-undef
-    let result = executeStatements(
+    let result = execute(
       state.config,
       payloadType,
       state.payload,
-      state.evaluator
+      state.executor,
+      debug
     );
 
     this.dispatchEvent(
@@ -360,15 +392,87 @@ export class Playground extends LitElement {
     );
 
     this.payload = state.payload;
+    this._setResult(result);
+  }
+
+  _setResult(result) {
     this._result = result;
+    if (result?.debug === true) {
+      this._getResultPanel()
+        .clearResult()
+        .then(() => {
+          this._setDebuggingInfo(result);
+        });
+    } else {
+      if (this._debuggingInfo) {
+        this._debuggingInfo = {...this._debuggingInfo, debugging: false};
+      }
+      this._activeResult = result;
+    }
+  }
+
+  _setDebuggingInfo(result) {
+    let debuggingInfo = {
+      debugging: false,
+      lines: [],
+      lineResultIndex: {},
+    };
+
+    if (result?.debug === true) {
+      let results;
+      try {
+        results = JSON.parse(result.value);
+        result.value = results;
+      } catch (e) {
+        this._debuggingInfo = {...this._debuggingInfo, ...debuggingInfo};
+        return;
+      }
+
+      debuggingInfo.debugging = true;
+      for (let i = 0; i < results.length; i++) {
+        let res = results[i];
+        debuggingInfo.lines.push(res.line);
+        debuggingInfo.lineResultIndex[res.line] = i;
+      }
+    }
+
+    // If we were already in debugging mode, reset the debugging flag to false
+    // so the UI can reset properly.
+    if (this._debuggingInfo?.debugging === true) {
+      this._debuggingInfo = null;
+    }
+
+    this.updateComplete.then(() => {
+      this._debuggingInfo = {...this._debuggingInfo, ...debuggingInfo};
+    });
   }
 
   _handleConfigExampleChanged(event) {
     let example = event.detail.value;
     if (example) {
-      let payload = example.payload || PAYLOAD_EXAMPLES[example.otlp_type];
+      let payload = example.payload || DEFAULT_PAYLOADS[example.signal];
       this.payload = JSON.stringify(JSON.parse(payload), null, 2);
-      this._setSelectedPayloadExample(example.otlp_type);
+      this._clearSelectedPayloadExample();
+    }
+  }
+
+  _handDebuggingStopRequested() {
+    this._debuggingInfo = null;
+  }
+
+  _handleDebuggingLineChanged(event) {
+    if (this._debuggingInfo) {
+      let line = event.detail.value;
+      if (line === -1) {
+        this._getResultPanel()
+          .clearResult()
+          .then(() => {
+            this._activeResult = null;
+          });
+      } else {
+        let resultIndex = this._debuggingInfo.lineResultIndex[line];
+        this._activeResult = this._result?.value?.[resultIndex] || null;
+      }
     }
   }
 
@@ -427,6 +531,30 @@ export class Playground extends LitElement {
         '#' + value
       );
     }
+  }
+
+  _sortBy(property) {
+    return function (a, b) {
+      return a[property] < b[property] ? -1 : a[property] > b[property] ? 1 : 0;
+    };
+  }
+
+  _getConfigExamples() {
+    if (!this._executor?.examples?.configs) {
+      return null;
+    }
+    return this._executor?.examples?.configs.sort(this._sortBy('name'));
+  }
+
+  _getPayloadExamples() {
+    if (!this._executor?.examples?.payloads) {
+      return DEFAULT_PAYLOAD_EXAMPLES;
+    }
+    return this._executor?.examples?.payloads.sort(this._sortBy('name'));
+  }
+
+  _getResultPanel() {
+    return this.shadowRoot.querySelector('#result-panel');
   }
 
   async _copyToClipboard(textToCopy) {
