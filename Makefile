@@ -5,7 +5,7 @@ WASM_OUTPUT_DIR?=../web/public/wasm
 
 # Versions to build (latest first)
 # Note: v0.125.0 not supported due to missing ProfileStatements in transformprocessor
-WASM_VERSIONS?=v0.142.0 v0.138.0
+WASM_VERSIONS?=v0.143.0 v0.138.0
 
 .PHONY: clean
 clean:
