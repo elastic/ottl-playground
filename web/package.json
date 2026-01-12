@@ -19,7 +19,7 @@
     "@codemirror/lang-yaml": "^6.1.1",
     "codemirror": "^6.0.1",
     "split.js": "^1.6.5",
-    "jsondiffpatch": "^0.6.0",
+    "jsondiffpatch": "^0.7.3",
     "lit": "^3.2.1"
   },
   "scripts": {
