@@ -20,6 +20,7 @@
 package internal
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
@@ -50,6 +51,54 @@ func Test_parseConfig_singleConfig(t *testing.T) {
 	require.NotEmpty(t, pc.TraceStatements)
 	require.NotEmpty(t, pc.MetricStatements)
 	require.NotEmpty(t, pc.MetricStatements)
+}
+
+func Test_parseConfig_configValidator(t *testing.T) {
+	id := component.MustNewID("test")
+	tests := []struct {
+		name      string
+		config    string
+		expectErr bool
+	}{
+		{
+			name:      "valid single config",
+			config:    "valid: true",
+			expectErr: false,
+		},
+		{
+			name:      "invalid single config",
+			config:    "valid: false",
+			expectErr: true,
+		},
+		{
+			name:      "valid multiple config",
+			config:    "test:\n valid: true\ntest/b:\n valid: true",
+			expectErr: false,
+		},
+		{
+			name:      "invalid multiple config",
+			config:    "test:\n valid: true\ntest/b:\n valid: false",
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseConfig[mockConfig](
+				id,
+				tt.config,
+				func() *mockConfig {
+					return &mockConfig{Valid: !tt.expectErr}
+				},
+			)
+
+			if tt.expectErr {
+				require.ErrorIs(t, err, errInvalidMockConfig)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
 
 func Test_parseConfig_multipleConfig(t *testing.T) {
@@ -86,4 +135,19 @@ func Test_parseConfig_invalidConfig(t *testing.T) {
 		},
 	)
 	require.ErrorContains(t, err, "cannot be used as a Conf")
+}
+
+var (
+	errInvalidMockConfig = errors.New("config validation failed")
+)
+
+type mockConfig struct {
+	Valid bool `mapstructure:"valid"`
+}
+
+func (m *mockConfig) Validate() error {
+	if m.Valid {
+		return nil
+	}
+	return errInvalidMockConfig
 }

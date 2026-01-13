@@ -26,6 +26,7 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -63,13 +64,8 @@ func parseConfig[C any](id component.ID, yamlConfig string, createDefaultConfig 
 		return parseMultipleConfigs[C](yamlConfig, deserializedConf, createDefaultConfig)
 	}
 
-	configMap := make(map[string]any)
-	for k, v := range deserializedConf.ToStringMap() {
-		configMap[k] = escapeDollarSigns(v)
-	}
-
 	defaultConfig := createDefaultConfig()
-	err = confmap.NewFromStringMap(configMap).Unmarshal(&defaultConfig)
+	err = unmarshalValidConfig(deserializedConf, defaultConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -89,13 +85,8 @@ func parseMultipleConfigs[C any](yamlConfig string, deserializedConf *confmap.Co
 			return nil, err
 		}
 
-		subConfigMap := map[string]any{}
-		for k, v := range sub.ToStringMap() {
-			subConfigMap[k] = escapeDollarSigns(v)
-		}
-
 		defaultConfig := createDefaultConfig()
-		err = confmap.NewFromStringMap(subConfigMap).Unmarshal(&defaultConfig)
+		err = unmarshalValidConfig(sub, defaultConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -104,6 +95,25 @@ func parseMultipleConfigs[C any](yamlConfig string, deserializedConf *confmap.Co
 	}
 
 	return configs, nil
+}
+
+func unmarshalValidConfig[C any](cfg *confmap.Conf, defaultConfig C) error {
+	subConfigMap := map[string]any{}
+	for k, v := range cfg.ToStringMap() {
+		subConfigMap[k] = escapeDollarSigns(v)
+	}
+
+	err := confmap.NewFromStringMap(subConfigMap).Unmarshal(&defaultConfig)
+	if err != nil {
+		return err
+	}
+
+	validator, ok := any(defaultConfig).(xconfmap.Validator)
+	if ok {
+		return validator.Validate()
+	}
+
+	return nil
 }
 
 func sortedConfigKeys(yamlData string) ([]string, error) {
