@@ -72,4 +72,4 @@ fmt:
 .PHONY: tidy
 tidy:
 	rm -fr go.sum
-	$(GOCMD) mod tidy -compat=1.22.0
+	$(GOCMD) mod tidy -compat=1.24.0
