@@ -23,6 +23,7 @@ package main
 
 import (
 	"fmt"
+	"runtime/debug"
 	"syscall/js"
 
 	"github.com/elastic/ottl-playground/wasm/internal"
@@ -34,7 +35,7 @@ func handlePanic() {
 	}()
 	if r := recover(); r != nil {
 		js.Global().Call("wasmPanicHandler", fmt.Sprintf("An error occurred in the WASM module: %v", r))
-		js.Global().Get("console").Call("error", "stack trace:", js.Global().Get("Error").New().Get("stack").String())
+		js.Global().Get("console").Call("error", fmt.Sprintf("[WASM] %v %s", r, string(debug.Stack())))
 	}
 }
 
