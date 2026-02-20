@@ -187,8 +187,8 @@ export class PlaygroundResultPanel extends LitElement {
   }
 
   _isReRender(changedProperties) {
-    // If no result rendered yet, need to render
-    if (this._resultPanel().childElementCount === 0) {
+    // If errored or no result rendered yet, need to render
+    if (this._errored === true || this._resultPanel().childElementCount === 0) {
       return false;
     }
     // If view didn't change, and it's currently not null, no re-render needed
@@ -268,7 +268,7 @@ export class PlaygroundResultPanel extends LitElement {
         this._views.push({id: VIEW_LOGS, name: 'Execution logs'});
       }
       if (this.viewConfig[this.view]?.enabled === false) {
-        this.view = this._views[0].id;
+        this.view = this._views[0]?.id ?? this.view;
       }
     }
   }

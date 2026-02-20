@@ -124,6 +124,10 @@ var transformProcessorConfigExamples = []ConfigExample{
 	},
 }
 
+var transformProcessorSyntaxHighlightPatterns = []string{
+	`^(transform(/.*)?\.)?(metric|log|trace|profile)_statements\.\*(\.statements\.\*)?$`,
+}
+
 // NewTransformProcessorExecutor creates an internal.Executor that runs OTTL statements using
 // the [transformprocessor].
 func NewTransformProcessorExecutor() Executor {
@@ -137,6 +141,7 @@ func NewTransformProcessorExecutor() Executor {
 			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
 			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
 			withConfigExamples(transformProcessorConfigExamples...),
+			withOTTLSyntaxHighlightPatterns(OTTLGrammarStatement, transformProcessorSyntaxHighlightPatterns),
 		),
 		withDebugger[transformprocessor.Config](debugger),
 	)

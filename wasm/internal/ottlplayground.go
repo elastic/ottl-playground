@@ -123,7 +123,9 @@ func Executors() []any {
 			_ = json.Unmarshal(examplesJson, &examples)
 		}
 
-		res = append(res, metadataValue)
+		if metadataValue != nil {
+			res = append(res, metadataValue)
+		}
 	}
 	return res
 }

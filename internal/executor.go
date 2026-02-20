@@ -39,6 +39,23 @@ const (
 	ResultViewLogs          ResultView = "logs"
 )
 
+type OTTLGrammar string
+
+const (
+	OTTLGrammarAny       OTTLGrammar = "OTTL"
+	OTTLGrammarCondition OTTLGrammar = "OTTLCondition"
+	OTTLGrammarStatement OTTLGrammar = "OTTLStatement"
+)
+
+type OTTLYamlPathPatterns struct {
+	Grammar  OTTLGrammar `json:"grammar"`
+	Patterns []string    `json:"patterns"`
+}
+
+type OTTLEditorConfig struct {
+	SyntaxHighlightPatterns []OTTLYamlPathPatterns `json:"syntaxHighlightPatterns"`
+}
+
 type ResultViewConfig struct {
 	Enabled bool `json:"enabled"`
 }
@@ -88,6 +105,7 @@ type Metadata struct {
 	ResultViewConfig map[ResultView]*ResultViewConfig `json:"resultViewConfig"`
 	Examples         Examples                         `json:"examples"`
 	Debuggable       bool                             `json:"debuggable"`
+	OTTLEditorConfig OTTLEditorConfig                 `json:"ottlEditorConfig"`
 }
 
 // metadataOption is a function that modifies the Metadata configuration.
@@ -140,6 +158,17 @@ func withPayloadExamples(examples ...PayloadExample) metadataOption {
 	}
 }
 
+// withOTTLSyntaxHighlightPatterns sets the syntax highlight patterns (YAML) for the OTTL editor.
+func withOTTLSyntaxHighlightPatterns(grammar OTTLGrammar, patterns []string) metadataOption {
+	return func(metadata *Metadata) error {
+		metadata.OTTLEditorConfig.SyntaxHighlightPatterns = append(metadata.OTTLEditorConfig.SyntaxHighlightPatterns, OTTLYamlPathPatterns{
+			Grammar:  grammar,
+			Patterns: patterns,
+		})
+		return nil
+	}
+}
+
 func newMetadata(ct ComponentType, id, name, path, docsURL string, options ...metadataOption) *Metadata {
 	meta := Metadata{
 		Type:             ct,
@@ -150,6 +179,7 @@ func newMetadata(ct ComponentType, id, name, path, docsURL string, options ...me
 		Version:          CollectorContribProcessorsVersion,
 		ResultViewConfig: newDefaultResultViewConfig(),
 		Examples:         Examples{},
+		OTTLEditorConfig: OTTLEditorConfig{},
 	}
 
 	for _, opt := range options {

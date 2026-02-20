@@ -20,21 +20,30 @@
 import {css, html, LitElement} from 'lit-element';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
-import {Prec} from '@codemirror/state';
-import {keymap} from '@codemirror/view';
+import {
+  Compartment,
+  EditorState,
+  Prec,
+  RangeSet,
+  RangeSetBuilder,
+  StateEffect,
+  StateField,
+} from '@codemirror/state';
+import {
+  Decoration,
+  gutter,
+  GutterMarker,
+  keymap,
+  ViewPlugin,
+} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
-import {yaml} from '@codemirror/lang-yaml';
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
-import {
-  StateField,
-  StateEffect,
-  RangeSet,
-  EditorState,
-  RangeSetBuilder,
-  Compartment,
-} from '@codemirror/state';
-import {gutter, GutterMarker, Decoration, ViewPlugin} from '@codemirror/view';
+import {yamlWithOTTL} from '../ottl/language';
+import {ottlClickableHoverExtension} from '../ottl/extensions';
+
+const OTTL_DOCS_BASE_URL =
+  'https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl';
 
 export class PlaygroundConfigPanel extends LitElement {
   static properties = {
@@ -45,8 +54,8 @@ export class PlaygroundConfigPanel extends LitElement {
     readOnly: {type: Boolean, attribute: 'read-only'},
     debuggerEnabled: {type: Boolean, attribute: 'debugger-enabled'},
     debuggingInfo: {type: Object, attribute: 'debugging-info'},
+    ottlEditorConfig: {type: Object, attribute: 'ottl-editor-config'},
 
-    _debuggingLineIndex: {state: true, type: Number},
     _debuggingLine: {state: true, type: Number},
     _editor: {state: true},
   };
@@ -61,6 +70,8 @@ export class PlaygroundConfigPanel extends LitElement {
     this._breakpointState = null;
     this._editorReadOnlyCompartment = new Compartment();
     this._editorBreakpointGutterCompartment = new Compartment();
+    this._editorLanguageCompartment = new Compartment();
+
     this.debuggingInfo = {
       debugging: false,
       lines: [],
@@ -133,6 +144,14 @@ export class PlaygroundConfigPanel extends LitElement {
 
     if (changedProperties.has('_debuggingLine')) {
       this._refreshHighlightedDebuggingLine();
+    }
+
+    if (changedProperties.has('ottlEditorConfig')) {
+      this._editor?.dispatch({
+        effects: this._editorLanguageCompartment.reconfigure(
+          this._ottlLanguage()
+        ),
+      });
     }
 
     super.updated(changedProperties);
@@ -473,6 +492,27 @@ export class PlaygroundConfigPanel extends LitElement {
     );
   }
 
+  _ottlLanguageTokenClick(token) {
+    // It currently only supports standard paths, converters, and editors.
+    // All links are based on the standard OTTL docs, not component-specific docs.
+    let link = OTTL_DOCS_BASE_URL;
+    let lowerCaseText = token.text.toLowerCase();
+    switch (token.name) {
+      case 'Path':
+        link += `/contexts/ottl${lowerCaseText}#paths`;
+        break;
+      case 'Converter':
+      case 'Editor':
+        link += `/ottlfuncs#${lowerCaseText}`;
+        break;
+    }
+    window.open(link, '_blank');
+  }
+
+  _ottlLanguage() {
+    return yamlWithOTTL(this.ottlEditorConfig?.syntaxHighlightPatterns);
+  }
+
   _initCodeEditor() {
     let me = this;
 
@@ -630,7 +670,8 @@ export class PlaygroundConfigPanel extends LitElement {
           ])
         ),
         EditorView.lineWrapping,
-        yaml(),
+        this._editorLanguageCompartment.of(this._ottlLanguage()),
+        ottlClickableHoverExtension(this._ottlLanguageTokenClick),
         this._editorBreakpointGutterCompartment.of(this.breakpointGutter),
         this._editorReadOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
         debuggingLinesExt,

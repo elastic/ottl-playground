@@ -154,12 +154,12 @@ export class Playground extends LitElement {
         if (data.payload) {
           try {
             data.payload = JSON.stringify(JSON.parse(data.payload), null, 2);
-          } catch (e) {
+          } catch {
             // Ignore
           }
         }
         return data;
-      } catch (e) {
+      } catch {
         return null;
       }
     }
@@ -231,6 +231,9 @@ export class Playground extends LitElement {
                   @debugging-line-changed="${this._handleDebuggingLineChanged}"
                   @debugging-stop-requested="${this
                     ._handDebuggingStopRequested}"
+                  ottl-editor-config="${JSON.stringify(
+                    this._executor?.ottlEditorConfig || {}
+                  )}"
                 >
                 </playground-config-panel>
               </div>
@@ -252,8 +255,7 @@ export class Playground extends LitElement {
               payload="${this.payload}"
               result="${JSON.stringify(this._activeResult)}"
               view-config="${JSON.stringify(
-                this._executors?.find((p) => p.id === this.executor)
-                  ?.resultViewConfig || {}
+                this._executor?.resultViewConfig || {}
               )}"
             >
             </playground-result-panel>
@@ -423,7 +425,7 @@ export class Playground extends LitElement {
       try {
         results = JSON.parse(result.value);
         result.value = results;
-      } catch (e) {
+      } catch {
         this._debuggingInfo = {...this._debuggingInfo, ...debuggingInfo};
         return;
       }
@@ -481,7 +483,7 @@ export class Playground extends LitElement {
     try {
       // Try to linearize the JSON to make it smaller
       data.payload = JSON.stringify(JSON.parse(data.payload));
-    } catch (e) {
+    } catch {
       // Ignore and use it as it's
     }
 

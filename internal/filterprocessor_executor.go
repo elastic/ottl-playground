@@ -59,6 +59,11 @@ var filterProcessorConfigExamples = []ConfigExample{
 	},
 }
 
+var filterProcessorSyntaxHighlightPatterns = []string{
+	`^(filter(/.*)?\.)?(metric|log|trace|profile)_conditions\.\*(\.conditions\.\*)?$`,
+	`^(filter(/.*)?\.)?(logs.log_record|metrics.(metric|datapoint)|traces.(span|spanevent)|profiles.profile)\.\*$`,
+}
+
 // NewFilterProcessorExecutor creates an internal.Executor that runs OTTL statements using
 // the [filterprocessor].
 func NewFilterProcessorExecutor() Executor {
@@ -71,6 +76,7 @@ func NewFilterProcessorExecutor() Executor {
 			"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor",
 			"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/filterprocessor",
 			withConfigExamples(filterProcessorConfigExamples...),
+			withOTTLSyntaxHighlightPatterns(OTTLGrammarCondition, filterProcessorSyntaxHighlightPatterns),
 		),
 	)
 }

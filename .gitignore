@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+/web/node_modules/
+/web/public/bundle.js
+/web/public/bundle.js.map
+/web/public/wasm/
