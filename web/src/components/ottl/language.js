@@ -130,7 +130,7 @@ function buildPathsPatterns(configuredPatterns) {
   for (let config of configuredPatterns) {
     let compiledPatterns = [];
     for (let pattern of config.patterns) {
-      compiledPatterns.push(RegExp(pattern));
+      compiledPatterns.push(new RegExp(pattern));
     }
     result.push({
       grammar: config.grammar,
@@ -141,12 +141,12 @@ function buildPathsPatterns(configuredPatterns) {
 }
 
 function isSupportedYamlNode(node) {
-  const isSupportedYamlNode =
+  const isValidNodeType =
     node.name === 'Item' ||
     node.name === 'Literal' ||
     node.name === 'QuotedLiteral';
 
-  if (!isSupportedYamlNode) {
+  if (!isValidNodeType) {
     return false;
   }
 

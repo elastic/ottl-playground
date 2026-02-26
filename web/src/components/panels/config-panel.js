@@ -506,7 +506,7 @@ export class PlaygroundConfigPanel extends LitElement {
         link += `/ottlfuncs#${lowerCaseText}`;
         break;
     }
-    window.open(link, '_blank');
+    window.open(link, '_blank', 'noopener,noreferrer');
   }
 
   _ottlLanguage() {
