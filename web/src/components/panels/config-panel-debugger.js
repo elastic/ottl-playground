@@ -135,6 +135,54 @@ export function configPanelDebuggerExtension(api) {
     });
   };
 
+  const breakpointGutterHover = ViewPlugin.fromClass(
+    class {
+      constructor(view) {
+        this.view = view;
+        this.gutterEl = null;
+        this.clear = () => {
+          if (this.view.state.field(hoveredLineField) != null) {
+            this.view.dispatch({effects: hoveredLineEffect.of(null)});
+          }
+        };
+        this.onMousemove = (e) => {
+          const pos = this.view.posAtCoords({x: e.clientX, y: e.clientY});
+          if (pos == null) {
+            return;
+          }
+          const line = this.view.state.doc.lineAt(pos);
+          const current = this.view.state.field(hoveredLineField);
+          if (current !== line.from) {
+            this.view.dispatch({effects: hoveredLineEffect.of(line.from)});
+          }
+        };
+      }
+      update(update) {
+        this.view = update.view;
+        const el = update.view.dom.querySelector('.cm-breakpoint-gutter');
+        if (el === this.gutterEl) {
+          return;
+        }
+        if (this.gutterEl) {
+          this.gutterEl.removeEventListener('mouseleave', this.clear);
+          this.gutterEl.removeEventListener('mousemove', this.onMousemove);
+        }
+        this.gutterEl = el;
+        if (el) {
+          el.addEventListener('mouseleave', this.clear);
+          el.addEventListener('mousemove', this.onMousemove);
+        }
+      }
+      destroy() {
+        if (this.gutterEl) {
+          this.gutterEl.removeEventListener('mouseleave', this.clear);
+          this.gutterEl.removeEventListener('mousemove', this.onMousemove);
+          this.gutterEl = null;
+        }
+      }
+    }
+  );
+
   const breakpointGutter = [
     breakpointState,
     hoveredLineField,
@@ -147,28 +195,16 @@ export function configPanelDebuggerExtension(api) {
           toggleBreakpoint(view, line.from);
           return true;
         },
-        mouseover(view, line, event) {
-          if (event.target.closest('.cm-breakpoint-gutter')) {
-            view.dispatch({
-              effects: hoveredLineEffect.of(line.from),
-            });
-          }
-          return false;
-        },
-        mouseout(view, line, event) {
-          const related = event.relatedTarget;
-          // Only keep hover when moving to another gutter line; clear when leaving
-          // the gutter or moving to the gutter container (avoids marker stuck on first line).
-          const isAnotherGutterLine =
-            related &&
-            related.closest('.cm-breakpoint-gutter .cm-gutterElement');
-          if (!isAnotherGutterLine) {
-            view.dispatch({effects: hoveredLineEffect.of(null)});
+        mouseover(view, line) {
+          const current = view.state.field(hoveredLineField);
+          if (current !== line.from) {
+            view.dispatch({effects: hoveredLineEffect.of(line.from)});
           }
           return false;
         },
       },
     }),
+    breakpointGutterHover,
     EditorView.baseTheme({
       '.cm-breakpoint-gutter': {
         cursor: 'pointer',
