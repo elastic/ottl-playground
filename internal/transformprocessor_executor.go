@@ -21,6 +21,7 @@ package internal
 
 import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+	"go.opentelemetry.io/collector/featuregate"
 )
 
 var transformProcessorConfigExamples = []ConfigExample{
@@ -132,8 +133,11 @@ var transformProcessorSyntaxHighlightPatterns = []string{
 // the [transformprocessor].
 func NewTransformProcessorExecutor() Executor {
 	debugger := NewTransformProcessorDebugger()
+	factory := transformprocessor.NewFactory()
+	enableTransformProcessorFeatureGates()
+
 	return NewJSONExecutor[transformprocessor.Config](
-		newProcessorConsumer[transformprocessor.Config](transformprocessor.NewFactory()),
+		newProcessorConsumer[transformprocessor.Config](factory),
 		newMetadata(
 			ComponentTypeProcessor,
 			"transform_processor",
@@ -145,4 +149,9 @@ func NewTransformProcessorExecutor() Executor {
 		),
 		withDebugger[transformprocessor.Config](debugger),
 	)
+}
+
+func enableTransformProcessorFeatureGates() {
+	// Enable flatten for logs; ignore error so older/different contrib versions still run.
+	_ = featuregate.GlobalRegistry().Set("transform.flatten.logs", true)
 }
