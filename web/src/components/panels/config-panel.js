@@ -20,27 +20,14 @@
 import {css, html, LitElement} from 'lit-element';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
-import {
-  Compartment,
-  EditorState,
-  Prec,
-  RangeSet,
-  RangeSetBuilder,
-  StateEffect,
-  StateField,
-} from '@codemirror/state';
-import {
-  Decoration,
-  gutter,
-  GutterMarker,
-  keymap,
-  ViewPlugin,
-} from '@codemirror/view';
+import {Compartment, EditorState, Prec} from '@codemirror/state';
+import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {yamlWithOTTL} from '../ottl/language';
 import {ottlClickableHoverExtension} from '../ottl/extensions';
+import {configPanelDebuggerExtension} from './config-panel-debugger.js';
 
 const OTTL_DOCS_BASE_URL =
   'https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl';
@@ -279,7 +266,7 @@ export class PlaygroundConfigPanel extends LitElement {
   _updateBreakpointGutterVisibility() {
     this._editor?.dispatch({
       effects: this._editorBreakpointGutterCompartment.reconfigure(
-        this.debuggerEnabled ? this.breakpointGutter : []
+        this.debuggerEnabled ? this._breakpointGutter : []
       ),
     });
   }
@@ -514,123 +501,26 @@ export class PlaygroundConfigPanel extends LitElement {
   }
 
   _initCodeEditor() {
-    let me = this;
-
-    const breakpointMarker = new (class extends GutterMarker {
-      toDOM() {
-        return document.createTextNode('⬤');
-      }
-    })();
-
-    const breakpointEffect = StateEffect.define({
-      map: (val, mapping) => ({pos: mapping.mapPos(val.pos), on: val.on}),
-    });
-
-    this._breakpointState = StateField.define({
-      create() {
-        return RangeSet.empty;
-      },
-      update(set, transaction) {
-        set = set.map(transaction.changes);
-        for (let e of transaction.effects) {
-          if (e.is(breakpointEffect)) {
-            if (e.value.on && me.debuggerEnabled === true)
-              set = set.update({add: [breakpointMarker.range(e.value.pos)]});
-            else set = set.update({filter: (from) => from !== e.value.pos});
-          }
-        }
-        return set;
-      },
-    });
-
-    const toggleBreakpoint = function (view, pos) {
-      let breakpoints = view.state.field(me._breakpointState);
-      let hasBreakpoint = false;
-      breakpoints.between(pos, pos, () => {
-        hasBreakpoint = true;
-      });
-      view.dispatch({
-        effects: breakpointEffect.of({pos, on: !hasBreakpoint}),
-      });
+    const debuggerApi = {
+      getDebuggerEnabled: () => this.debuggerEnabled,
+      getDebuggingLine: () => this._debuggingLine,
+      isDebugging: () => this.debuggingInfo?.debugging === true,
+      onStop: () => this._stopDebuggingClick(),
+      onResume: () => this._resumeDebuggingClick(),
+      onNextLine: () => this._nextDebugLineClick(),
+      onPreviousLine: () => this._previousDebugLineClick(),
     };
+    const {
+      breakpointState,
+      breakpointGutter,
+      debuggingLineExt,
+      debuggerKeymap,
+    } = configPanelDebuggerExtension(debuggerApi);
 
-    this.breakpointGutter = [
-      this._breakpointState,
-      gutter({
-        class: 'cm-breakpoint-gutter',
-        markers: (v) => v.state.field(me._breakpointState),
-        initialSpacer: () => breakpointMarker,
-        domEventHandlers: {
-          mousedown(view, line) {
-            toggleBreakpoint(view, line.from);
-            return true;
-          },
-        },
-      }),
+    this._breakpointState = breakpointState;
+    this._breakpointGutter = breakpointGutter;
 
-      EditorView.baseTheme({
-        '.cm-breakpoint-gutter': {
-          cursor: 'pointer',
-        },
-        '.cm-breakpoint-gutter .cm-gutterElement': {
-          color: 'red',
-          paddingLeft: '3px',
-          paddingRight: '3px',
-          fontSize: '12px',
-          cursor: 'default',
-        },
-      }),
-    ];
-
-    const debuggingTheme = EditorView.baseTheme({
-      '&light .cm-debuggingLine': {
-        backgroundColor: '#0a43c5',
-        color: 'white!important',
-      },
-      '&light .cm-debuggingLine span': {
-        color: 'white!important',
-      },
-    });
-
-    const debuggingLineDeco = Decoration.line({
-      attributes: {class: 'cm-debuggingLine'},
-    });
-
-    const debuggingDeco = function (view) {
-      let builder = new RangeSetBuilder();
-      if (
-        me._debuggingLine != null &&
-        view.state.doc.lines >= me._debuggingLine
-      ) {
-        let line = view.state.doc.line(me._debuggingLine);
-        builder.add(line.from, line.from, debuggingLineDeco);
-      }
-      return builder.finish();
-    };
-
-    const showDebuggingLine = ViewPlugin.fromClass(
-      class {
-        constructor(view) {
-          this.decorations = debuggingDeco(view);
-        }
-        update(update) {
-          if (update.selectionSet)
-            this.decorations = debuggingDeco(update.view);
-        }
-      },
-      {
-        decorations: (v) => v.decorations,
-      }
-    );
-
-    const debuggingLinesExt = [debuggingTheme, showDebuggingLine];
-    const debuggingShortcutsEnabled = () => {
-      return (
-        me.debuggerEnabled === true && me.debuggingInfo?.debugging === true
-      );
-    };
-
-    let readOnly =
+    const readOnly =
       this.readOnly === true || this.debuggingInfo?.debugging === true;
     this._editor = new EditorView({
       extensions: [
@@ -639,42 +529,15 @@ export class PlaygroundConfigPanel extends LitElement {
           keymap.of([
             indentWithTab,
             {key: 'Enter', run: insertNewlineAndIndent, shift: () => true},
-            {
-              key: 'Shift-F2',
-              run: () => {
-                if (debuggingShortcutsEnabled()) this._stopDebuggingClick();
-                return true;
-              },
-            },
-            {
-              key: 'Shift-F7',
-              run: () => {
-                if (debuggingShortcutsEnabled()) this._previousDebugLineClick();
-                return true;
-              },
-            },
-            {
-              key: 'Shift-F8',
-              run: () => {
-                if (debuggingShortcutsEnabled()) this._nextDebugLineClick();
-                return true;
-              },
-            },
-            {
-              key: 'Shift-F9',
-              run: () => {
-                if (debuggingShortcutsEnabled()) this._resumeDebuggingClick();
-                return true;
-              },
-            },
+            ...debuggerKeymap,
           ])
         ),
         EditorView.lineWrapping,
         this._editorLanguageCompartment.of(this._ottlLanguage()),
         ottlClickableHoverExtension(this._ottlLanguageTokenClick),
-        this._editorBreakpointGutterCompartment.of(this.breakpointGutter),
+        this._editorBreakpointGutterCompartment.of(this._breakpointGutter),
         this._editorReadOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
-        debuggingLinesExt,
+        debuggingLineExt,
         EditorView.updateListener.of((v) => {
           if (v.docChanged) {
             this._notifyConfigChange(this.config);
