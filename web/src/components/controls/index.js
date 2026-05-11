@@ -47,6 +47,7 @@ export class PlaygroundControls extends LitElement {
     this.evaluators = [
       {id: 'transform_processor', name: 'Transform processor'},
       {id: 'filter_processor', name: 'Filter processor'},
+      {id: 'attributes_processor', name: 'Attributes processor'},
     ];
 
     window.addEventListener('keydown', (event) => {

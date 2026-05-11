@@ -98,6 +98,8 @@ github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.138.0
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.138.0/go.mod h1:vXqe3Wa4lOj+k+au737GaIc4tMzBdlwr8eX2/1qK5AA=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.138.0 h1:34HE7sAjlXlzL1HAbDxOBKFdU3tTQcmgFVvjnts67DA=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatautil v0.138.0/go.mod h1:XzBJKpG3Gi3GMyWF+7NgVl219PaGTl4+RaNo8f8KAZs=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.138.0 h1:S+rfRC6Niqz1z6O/rzwS1COVTN7xEuozOWY+vyvwqB8=
+github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.138.0/go.mod h1:LoxNQzMxF4h7yaNEnPgv/+6Ams13X9TAYYkwbjG3dLA=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.138.0 h1:CKEK9EHAo0evQgpNHJ0rAhKVlRZ+z74J3M63UJdnslM=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.138.0/go.mod h1:26VUI7j9CfUk5uY7Ys0+xCh/99gkXg/udVlk/NInmTs=
 github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.138.0 h1:oXFQK3gisXayZrJxIGmgsues2k9zsVn3AseVsh5rKqc=
@@ -126,6 +128,8 @@ github.com/zeebo/xxh3 v1.0.2 h1:xZmwmqxHZA8AI603jOQ0tMqmBr9lPeFwGg6d+xy9DC0=
 github.com/zeebo/xxh3 v1.0.2/go.mod h1:5NWz9Sef7zIDm2JHfFlcQvNekmcEl9ekUZQQKCYaDcA=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
+go.opentelemetry.io/collector/client v1.44.0 h1:pfOlUf6pU/1MyucE7oC1Q/aZAxQS8icKA/iw2foHqPE=
+go.opentelemetry.io/collector/client v1.44.0/go.mod h1:GoESF6Tpa5ikkYGFvctqgILCpBuG+F45HPznER6lPwk=
 go.opentelemetry.io/collector/component v1.44.0 h1:SX5UO/gSDm+1zyvHVRFgpf8J1WP6U3y/SLUXiVEghbE=
 go.opentelemetry.io/collector/component v1.44.0/go.mod h1:geKbCTNoQfu55tOPiDuxLzNZsoO9//HRRg10/8WusWk=
 go.opentelemetry.io/collector/component/componentstatus v0.138.0 h1:KUZyp1b6W2UUb/m/IhakL4bBdX6cbBj0PPx7MZ/jtOo=

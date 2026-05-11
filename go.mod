@@ -3,6 +3,7 @@ module github.com/elastic/ottl-playground
 go 1.24.0
 
 require (
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.138.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.138.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.138.0
 	github.com/stretchr/testify v1.11.1
@@ -62,6 +63,7 @@ require (
 	github.com/ua-parser/uap-go v0.0.0-20250326155420-f7f5a2f9f5bc // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
+	go.opentelemetry.io/collector/client v1.44.0 // indirect
 	go.opentelemetry.io/collector/featuregate v1.44.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.138.0 // indirect
 	go.opentelemetry.io/collector/pipeline v1.44.0 // indirect

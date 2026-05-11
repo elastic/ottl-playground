@@ -1,0 +1,26 @@
+include:
+  match_type: strict
+  span_kinds: ["SPAN_KIND_SERVER"]
+  log_severity_number:
+    min: 10
+    match_undefined: false
+exclude:
+  match_type: strict
+  metric_names: [my.histogram]
+actions:
+  - key: my.gauge.attr
+    action: delete
+  - key: upsert.attr
+    value: true
+    action: upsert
+  - key: insert.attr
+    value: 2245
+    action: insert
+  - key: account_email
+    action: hash
+  - key: int.attribute
+    action: convert
+    converted_type: int
+  - key: my.span.attr
+    from_attribute: name
+    action: update
