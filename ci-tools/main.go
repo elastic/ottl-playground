@@ -63,8 +63,8 @@ func main() {
 	generateConstantsCmd := flag.NewFlagSet("generate-constants", flag.ExitOnError)
 	addVersionFlag(&commandsArgs.version, currentVersion, generateConstantsCmd)
 
-	generateProcessorsUpdateCmd := flag.NewFlagSet("generate-processors-update", flag.ExitOnError)
-	addVersionFlag(&commandsArgs.version, currentVersion, generateProcessorsUpdateCmd)
+	generateExecutorsUpdateCmd := flag.NewFlagSet("generate-executors-update", flag.ExitOnError)
+	addVersionFlag(&commandsArgs.version, currentVersion, generateExecutorsUpdateCmd)
 
 	switch os.Args[1] {
 	case getVersionCmd.Name():
@@ -90,8 +90,8 @@ func main() {
 		} else {
 			fmt.Println(commandsArgs.version)
 		}
-	case generateProcessorsUpdateCmd.Name():
-		_ = generateProcessorsUpdateCmd.Parse(os.Args[2:])
+	case generateExecutorsUpdateCmd.Name():
+		_ = generateExecutorsUpdateCmd.Parse(os.Args[2:])
 		argument, err := generateProcessorsGoGetArgument(commandsArgs.version)
 		if err != nil {
 			fmt.Println(err)
@@ -172,7 +172,7 @@ func extractProcessorsVersionFromGoModule() (string, error) {
 		if dep.Indirect {
 			continue
 		}
-		if strings.HasPrefix(dep.Mod.Path, "github.com/open-telemetry/opentelemetry-collector-contrib/processor/") {
+		if isExecutorGoModule(dep) {
 			if version != "" && version != dep.Mod.Version {
 				return "", fmt.Errorf("multiple opentelemetry-collector-contrib versions found: %q and %q", version, dep.Mod.Version)
 			}
@@ -303,7 +303,7 @@ func generateProcessorsGoGetArgument(version string) (string, error) {
 		if dep.Indirect {
 			continue
 		}
-		if !seem[dep.Mod.Path] && strings.HasPrefix(dep.Mod.Path, "github.com/open-telemetry/opentelemetry-collector-contrib/processor/") {
+		if !seem[dep.Mod.Path] && isExecutorGoModule(dep) {
 			seem[dep.Mod.Path] = true
 			argument.WriteString(fmt.Sprintf("%s@%s", dep.Mod.Path, version))
 			argument.WriteString(" ")
@@ -407,4 +407,9 @@ func getUnregisteredVersions(maxNumOfVersions int) (string, error) {
 	}
 
 	return strings.Join(newVersions, " "), nil
+}
+
+func isExecutorGoModule(dep *modfile.Require) bool {
+	return strings.HasPrefix(dep.Mod.Path, "github.com/open-telemetry/opentelemetry-collector-contrib/processor/") ||
+		strings.HasPrefix(dep.Mod.Path, "github.com/open-telemetry/opentelemetry-collector-contrib/connector/")
 }

@@ -22,7 +22,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
@@ -32,28 +32,31 @@ import (
 )
 
 const (
-	attributesprocessorConfig = "attributesprocessor.yaml"
+	filterprocessorConfig = "filterprocessor.yaml"
 )
 
-func Test_AttributeProcessorExecutor_ParseConfig(t *testing.T) {
-	yamlConfig := readTestData(t, attributesprocessorConfig)
-	cfgs, err := parseConfig[attributesprocessor.Config](
-		component.NewIDWithName(attributesprocessor.NewFactory().Type(), "test_attributes_processor"),
+func Test_FilterProcessorExecutor_parseConfig(t *testing.T) {
+	yamlConfig := readTestData(t, filterprocessorConfig)
+	cfgs, err := parseConfig[filterprocessor.Config](
+		component.NewIDWithName(filterprocessor.NewFactory().Type(), "test_filter_processor"),
 		yamlConfig,
-		func() *attributesprocessor.Config {
-			return attributesprocessor.NewFactory().CreateDefaultConfig().(*attributesprocessor.Config)
+		func() *filterprocessor.Config {
+			return filterprocessor.NewFactory().CreateDefaultConfig().(*filterprocessor.Config)
 		},
 	)
 	require.NoError(t, err)
 
 	pc := cfgs[0].Value
 	require.NotNil(t, pc)
-	require.NotEmpty(t, pc.Actions)
+	require.NotEmpty(t, pc.ErrorMode)
+	require.NotEmpty(t, pc.Logs)
+	require.NotEmpty(t, pc.Traces)
+	require.NotEmpty(t, pc.Metrics)
 }
 
-func Test_AttributeProcessorExecutor_ExecuteLogs(t *testing.T) {
-	executor := NewAttributesProcessorExecutor()
-	config := readTestData(t, attributesprocessorConfig)
+func Test_FilterProcessorExecutor_ExecuteLogs(t *testing.T) {
+	executor := NewFilterProcessorExecutor()
+	config := readTestData(t, filterprocessorConfig)
 	payload := readTestData(t, "logs.json")
 
 	output, err := executor.ExecuteLogs(config, payload)
@@ -61,13 +64,15 @@ func Test_AttributeProcessorExecutor_ExecuteLogs(t *testing.T) {
 
 	unmarshaler := &plog.JSONUnmarshaler{}
 	outputLogs, err := unmarshaler.UnmarshalLogs([]byte(output.Value))
+
 	require.NoError(t, err)
 	require.NotNil(t, outputLogs)
+	assert.Equal(t, outputLogs.LogRecordCount(), 1)
 }
 
-func Test_AttributeProcessorExecutor_ExecuteTraces(t *testing.T) {
-	executor := NewAttributesProcessorExecutor()
-	config := readTestData(t, attributesprocessorConfig)
+func Test_FilterProcessorExecutor_ExecuteTraces(t *testing.T) {
+	executor := NewFilterProcessorExecutor()
+	config := readTestData(t, filterprocessorConfig)
 	payload := readTestData(t, "traces.json")
 
 	output, err := executor.ExecuteTraces(config, payload)
@@ -77,11 +82,15 @@ func Test_AttributeProcessorExecutor_ExecuteTraces(t *testing.T) {
 	outputTraces, err := unmarshaler.UnmarshalTraces([]byte(output.Value))
 	require.NoError(t, err)
 	require.NotNil(t, outputTraces)
+
+	scopeSpans := outputTraces.ResourceSpans().At(0).ScopeSpans()
+	assert.Equal(t, 1, scopeSpans.Len())
+	assert.Equal(t, "eee19b7ec3c1b174", scopeSpans.At(0).Spans().At(0).SpanID().String())
 }
 
-func Test_AttributeProcessorExecutor_ExecuteMetrics(t *testing.T) {
-	executor := NewAttributesProcessorExecutor()
-	config := readTestData(t, attributesprocessorConfig)
+func Test_FilterProcessorExecutor_ExecuteMetrics(t *testing.T) {
+	executor := NewFilterProcessorExecutor()
+	config := readTestData(t, filterprocessorConfig)
 	payload := readTestData(t, "metrics.json")
 
 	output, err := executor.ExecuteMetrics(config, payload)
@@ -91,10 +100,15 @@ func Test_AttributeProcessorExecutor_ExecuteMetrics(t *testing.T) {
 	outputMetrics, err := unmarshaler.UnmarshalMetrics([]byte(output.Value))
 	require.NoError(t, err)
 	require.NotNil(t, outputMetrics)
+
+	metrics := outputMetrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
+	for _, v := range metrics.All() {
+		require.NotEqual(t, "my.counter", v.Name())
+	}
 }
 
-func Test_AttributeProcessorExecutor_ObservedLogs(t *testing.T) {
-	executor := NewAttributesProcessorExecutor().(*defaultExecutor[attributesprocessor.Config])
+func Test_FilterProcessorExecutor_ObservedLogs(t *testing.T) {
+	executor := NewFilterProcessorExecutor().(*defaultExecutor[filterprocessor.Config])
 	executor.consumer.TelemetrySettings().Logger.Sugar().Debug("this is a log")
 	logEntries := executor.ObservedLogs().TakeAll()
 

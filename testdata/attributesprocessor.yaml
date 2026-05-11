@@ -1,12 +1,3 @@
-include:
-  match_type: strict
-  span_kinds: ["SPAN_KIND_SERVER"]
-  log_severity_number:
-    min: 10
-    match_undefined: false
-exclude:
-  match_type: strict
-  metric_names: [my.histogram]
 actions:
   - key: my.gauge.attr
     action: delete
