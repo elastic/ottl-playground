@@ -9,8 +9,8 @@ The project has three distinct layers:
 **Go core (`internal/`)** — implements the `Executor` interface for each OTel Collector processor. Currently two executors: `TransformProcessorExecutor` and `FilterProcessorExecutor`. Each supports all four signal types: logs, traces, metrics, profiles.
 
 **WebAssembly bridge (`wasm/`)** — compiles the Go core to WASM (`GOARCH=wasm GOOS=js`). Exposes two JS globals on startup:
-- `executeStatements(config, payloadType, payload, evaluatorId)` → result JSON
-- `statementsExecutors()` → list of available executors
+- `execute(config, payloadType, payload, executorId, debug)` → result JSON. The `debug` boolean activates breakpoint mode; when true, `result.debug === true` and `result.value` contains per-line results rather than a final payload.
+- `getExecutors()` → list of available executors, each with `id`, `name`, `type`, `version`, `docsURL`, and `examples` fields
 
 **Frontend (`web/src/`)** — vanilla JS with [Lit](https://lit.dev/) Web Components, currently bundled by Rollup into `web/public/bundle.js`. Main component is `playground-stage` (`playground.js`), which fetches `wasm/versions.json`, loads the correct `.wasm` file at runtime, and wires up the editor panels. **Migration in progress** to Vue 3 + Web Awesome + Vite (see Frontend Libraries and UI Improvement Plan sections).
 
@@ -73,7 +73,7 @@ make register-version           # updates versions.json
 | `internal/transformprocessorexecutor.go` | Transform processor executor |
 | `internal/filterprocessorexecutor.go` | Filter processor executor |
 | `internal/versions.go` | Generated — current collector version constant |
-| `wasm/main.go` | WASM entry point; registers JS globals |
+| `wasm/main.go` | WASM entry point; registers `execute()` and `getExecutors()` JS globals |
 | `web/src/components/playground.js` | Root `playground-stage` LitElement |
 | `web/public/wasm/versions.json` | WASM version manifest read at runtime |
 | `ci-tools/main.go` | Build/version automation CLI |
@@ -260,7 +260,7 @@ web/
 
 Move all WASM lifecycle logic out of `playground.js` into `src/wasm/`:
 - `bridge.js` — loads `wasm_exec.js`, fetches and instantiates the `.wasm` binary, fires `playground-wasm-ready`
-- `executor.js` — wraps `executeStatements()` and `statementsExecutors()` globals
+- `executor.js` — wraps `execute(config, payloadType, payload, executorId, debug)` and `getExecutors()` globals
 - `versions.js` — fetches and parses `wasm/versions.json`
 
 No visible change to the user. Creates the clean seams needed for Vue and Vitest.
@@ -297,7 +297,7 @@ For test files that need a simulated browser (DOM, custom elements), add one lin
 - `test/utils/json-payload.test.js`
 - `test/utils/escape-html.test.js`
 - `test/wasm/versions.test.js` — mock `fetch`, verify JSON parsing
-- `test/wasm/executor.test.js` — mock WASM globals, verify error handling
+- `test/wasm/executor.test.js` — mock `execute()` and `getExecutors()` globals, verify error handling and debug flag behaviour
 
 ---
 
