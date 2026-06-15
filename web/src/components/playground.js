@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {html, LitElement} from 'lit-element';
+import {html, LitElement, nothing} from 'lit';
 import '../wasm_exec.js';
 import Split from 'split.js';
 import {CONFIG_EXAMPLES, PAYLOAD_EXAMPLES} from './examples';
@@ -25,7 +25,6 @@ import './panels/config-panel';
 import './panels/payload-panel';
 import './panels/result-panel';
 import {playgroundStyles} from './playground.styles';
-import {nothing} from 'lit';
 import {getJsonPayloadType} from './utils/json-payload';
 import {base64ToUtf8, utf8ToBase64} from './utils/base64';
 
@@ -64,9 +63,7 @@ export class Playground extends LitElement {
     this.baseUrl = '';
   }
 
-  static get styles() {
-    return playgroundStyles;
-  }
+  static styles = playgroundStyles;
 
   get state() {
     return {

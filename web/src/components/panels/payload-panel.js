@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {css, html, LitElement} from 'lit-element';
+import {css, html, LitElement, nothing} from 'lit';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
 import {keymap} from '@codemirror/view';
@@ -25,7 +25,6 @@ import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {PAYLOAD_EXAMPLES} from '../examples';
 import {linter, lintGutter} from '@codemirror/lint';
 import {json, jsonParseLinter} from '@codemirror/lang-json';
-import {nothing} from 'lit';
 import {Prec} from '@codemirror/state';
 
 export class PlaygroundPayloadPanel extends LitElement {
@@ -41,26 +40,24 @@ export class PlaygroundPayloadPanel extends LitElement {
     this.hideLoadExample = false;
   }
 
-  static get styles() {
-    return [
-      css`
-        .example-button {
-          background-color: #f1f1f1;
-          border: none;
-          color: black;
-          font-size: 28px;
-          padding: 0 12px;
-          text-align: center;
-          text-decoration: none;
-          display: inline-block;
-          margin: 4px 2px;
-          cursor: pointer;
-          border-radius: 5px;
-        }
-      `,
-      ...codePanelsStyles,
-    ];
-  }
+  static styles = [
+    css`
+      .example-button {
+        background-color: #f1f1f1;
+        border: none;
+        color: black;
+        font-size: 28px;
+        padding: 0 12px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+    `,
+    ...codePanelsStyles,
+  ];
 
   get payload() {
     return this._editor?.state.doc.toString() ?? '';

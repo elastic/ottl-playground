@@ -17,15 +17,14 @@
  * under the License.
  */
 
-import {html, LitElement} from 'lit-element';
+import {html, LitElement, nothing} from 'lit';
+import {repeat} from 'lit/directives/repeat.js';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
 import {Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
-import {nothing} from 'lit';
-import {repeat} from 'lit/directives/repeat.js';
 
 export class PlaygroundConfigPanel extends LitElement {
   static properties = {
@@ -43,9 +42,7 @@ export class PlaygroundConfigPanel extends LitElement {
     this.configDocsURL = '';
   }
 
-  static get styles() {
-    return codePanelsStyles;
-  }
+  static styles = codePanelsStyles;
 
   get config() {
     return this._editor?.state.doc.toString() ?? '';

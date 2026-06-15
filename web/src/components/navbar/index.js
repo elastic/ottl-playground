@@ -17,8 +17,7 @@
  * under the License.
  */
 
-import {css, html, LitElement} from 'lit-element';
-import {nothing} from 'lit';
+import {css, html, LitElement, nothing} from 'lit';
 
 export class PlaygroundNavBar extends LitElement {
   static properties = {
@@ -31,8 +30,7 @@ export class PlaygroundNavBar extends LitElement {
     this.title = 'OTTL&nbsp;Playground';
   }
 
-  static get styles() {
-    return css`
+  static styles = css`
       :host .navbar {
         width: 100%;
         overflow: auto;
@@ -119,7 +117,6 @@ export class PlaygroundNavBar extends LitElement {
         justify-content: flex-end;
       }
     `;
-  }
 
   render() {
     return html`

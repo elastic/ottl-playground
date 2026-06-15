@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {html, LitElement} from 'lit-element';
+import {html, LitElement, nothing} from 'lit';
 import * as htmlFormatter from 'jsondiffpatch/formatters/html';
 import {basicSetup, EditorView} from 'codemirror';
 import {json} from '@codemirror/lang-json';
@@ -25,7 +25,6 @@ import * as jsondiffpatch from 'jsondiffpatch';
 import * as annotatedFormatter from 'jsondiffpatch/formatters/annotated';
 import {resultPanelStyles} from './result-panel.styles.js';
 import {escapeHTML} from '../utils/escape-html';
-import {nothing} from 'lit';
 
 export class PlaygroundResultPanel extends LitElement {
   static properties = {
@@ -40,9 +39,7 @@ export class PlaygroundResultPanel extends LitElement {
     this.view = 'visual_delta';
   }
 
-  static get styles() {
-    return resultPanelStyles;
-  }
+  static styles = resultPanelStyles;
 
   updated(changedProperties) {
     if (
