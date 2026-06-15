@@ -20,25 +20,19 @@
 package internal
 
 import (
-	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
+	"encoding/json"
+	"fmt"
 )
 
-type transformProcessorExecutor struct {
-	*processorExecutor[transformprocessor.Config]
-}
-
-func (t transformProcessorExecutor) Metadata() Metadata {
-	return newMetadata(
-		"transform_processor",
-		"Transform processor",
-		"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
-		"https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/processor/transformprocessor",
-	)
-}
-
-// NewTransformProcessorExecutor creates an internal.Executor that runs OTTL statements using
-// the [transformprocessor].
-func NewTransformProcessorExecutor() Executor {
-	executor := newProcessorExecutor[transformprocessor.Config](transformprocessor.NewFactory())
-	return &transformProcessorExecutor{executor}
+func structToMap(value any) (map[string]any, error) {
+	var rawMapValue map[string]any
+	metadataBytes, err := json.Marshal(value)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal value: %w", err)
+	}
+	err = json.Unmarshal(metadataBytes, &rawMapValue)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal value: %w", err)
+	}
+	return rawMapValue, nil
 }

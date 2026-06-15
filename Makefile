@@ -28,7 +28,7 @@ build-unregistered-versions:
 
 .PHONY: update-processor-version
 update-processor-version:
-	$(eval PARAMS = $(shell $(GOCMD) run ci-tools/main.go generate-processors-update -version=$(PROCESSORS_VERSION)))
+	$(eval PARAMS = $(shell $(GOCMD) run ci-tools/main.go generate-executors-update -version=$(PROCESSORS_VERSION)))
 	$(GOCMD) get $(PARAMS)
 	@FIRST_PROCESSOR=$$(echo "$(PARAMS)" | awk '{print $$1}'); \
 	COLLECTOR_DEPENDENCIES=$$($(GOCMD) mod graph | grep $$FIRST_PROCESSOR | grep "go.opentelemetry.io/collector/" | awk '{print $$2}' | sort -u); \
@@ -72,4 +72,4 @@ fmt:
 .PHONY: tidy
 tidy:
 	rm -fr go.sum
-	$(GOCMD) mod tidy -compat=1.22.0
+	$(GOCMD) mod tidy -compat=1.25.0

@@ -9,6 +9,7 @@ web/public/wasm/
 # Editor / IDE
 .idea/
 .vscode/
+.DS_Store
 *.iml
 
 # Local Claude settings

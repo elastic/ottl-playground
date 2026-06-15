@@ -92,6 +92,17 @@
                   }
                 }
               ]
+            },
+            {
+              "timeUnixNano": "1544712660300000000",
+              "observedTimeUnixNano": "1544712660300000000",
+              "severityNumber": 0,
+              "severityText": "Information",
+              "traceId": "5b8efff798038103d269b633813fc60c",
+              "spanId": "eee19b7ec3c1b174",
+              "body": {
+                "stringValue": "Example log record"
+              }
             }
           ]
         }

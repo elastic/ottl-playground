@@ -22,22 +22,27 @@ import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
-import {PAYLOAD_EXAMPLES} from '../examples';
 import {linter, lintGutter} from '@codemirror/lint';
 import {json, jsonParseLinter} from '@codemirror/lang-json';
-import {Prec} from '@codemirror/state';
+import {nothing} from 'lit';
+import {Prec, Compartment, EditorState} from '@codemirror/state';
+import {repeat} from 'lit/directives/repeat.js';
 
 export class PlaygroundPayloadPanel extends LitElement {
   static properties = {
     payload: {type: String},
+    examples: {type: Array},
     hideExamples: {type: Boolean, attribute: 'hide-examples'},
+    readOnly: {type: Boolean, attribute: 'read-only'},
     _editor: {type: Object, state: true},
   };
 
   constructor() {
     super();
     this.payload = '{}';
-    this.hideLoadExample = false;
+    this.examples = [];
+    this.hideExamples = false;
+    this._editorReadOnlyCompartment = new Compartment();
   }
 
   static styles = [
@@ -72,12 +77,28 @@ export class PlaygroundPayloadPanel extends LitElement {
     });
   }
 
-  set selectedExample(val) {
-    this.shadowRoot.querySelector('#example-select').value = val;
+  clearSelectedExample() {
+    this.shadowRoot.querySelector('#example-select').value = '';
   }
 
   firstUpdated() {
     this._initCodeEditor();
+  }
+
+  updated(changedProperties) {
+    if (changedProperties.has('examples')) {
+      this.clearSelectedExample();
+    }
+
+    if (changedProperties.has('readOnly')) {
+      this._editor?.dispatch({
+        effects: this._editorReadOnlyCompartment.reconfigure(
+          EditorState.readOnly.of(this.readOnly || false)
+        ),
+      });
+    }
+
+    super.updated(changedProperties);
   }
 
   render() {
@@ -99,18 +120,31 @@ export class PlaygroundPayloadPanel extends LitElement {
             >
           </div>
           <div class="right" style="display: flex">
-            ${this.hideLoadExample
+            ${this.hideExamples
               ? nothing
               : html`
                                     <select
                                             id="example-select"
                                             @change="${this._handleExampleChanged}"
-                                            title="Payload example">
-                                        <option selected disabled value="">Example
-                                        </option>
-                                        <option value="logs">Logs</option>
-                                        <option value="traces">Traces</option>
-                                        <option value="metrics">Metrics</option>
+                                            title="Payload example"
+                                            ?disabled="${this.readOnly === true}"
+                                    >
+                                        <option selected disabled value="">Example</option>
+                                      ${
+                                        this.examples &&
+                                        repeat(
+                                          this.examples,
+                                          (it) => it.name,
+                                          (it, idx) => {
+                                            return html`<option
+                                              value="${idx}"
+                                              title="${it.name}"
+                                            >
+                                              ${it.name}
+                                            </option>`;
+                                          }
+                                        )
+                                      }
                                     </select>
                                     </div>`}
           </div>
@@ -122,16 +156,22 @@ export class PlaygroundPayloadPanel extends LitElement {
     `;
   }
 
-  _handleExampleChanged(e) {
-    if (!e.target.value) return;
-    let val = JSON.stringify(
-      JSON.parse(PAYLOAD_EXAMPLES[e.target.value]),
-      null,
-      2
+  _handleExampleChanged(event) {
+    if (!event.target.value) return;
+    let idx = parseInt(event.target.value);
+    let example = this.examples[idx];
+    if (!example) return;
+
+    this.payload = JSON.stringify(JSON.parse(example.value), null, 2);
+
+    this.dispatchEvent(
+      new CustomEvent('payload-example-changed', {
+        detail: {value: example},
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      })
     );
-    this._editor?.dispatch({
-      changes: {from: 0, to: this._editor.state.doc.length, insert: val},
-    });
   }
 
   _notifyPayloadChange(value) {
@@ -156,6 +196,9 @@ export class PlaygroundPayloadPanel extends LitElement {
         ),
         linter(jsonParseLinter()),
         lintGutter(),
+        this._editorReadOnlyCompartment.of(
+          EditorState.readOnly.of(this.readOnly || false)
+        ),
         EditorView.lineWrapping,
         EditorView.updateListener.of((v) => {
           if (v.docChanged) {

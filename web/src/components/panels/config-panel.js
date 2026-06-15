@@ -17,14 +17,20 @@
  * under the License.
  */
 
-import {html, LitElement, nothing} from 'lit';
+import {css, html, LitElement, nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
-import {Prec} from '@codemirror/state';
+import {Compartment, EditorState, Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
 import {yaml} from '@codemirror/lang-yaml';
+import {yamlWithOTTL} from '../ottl/language';
+import {ottlClickableHoverExtension} from '../ottl/extensions';
+import {configPanelDebuggerExtension} from './config-panel-debugger.js';
+
+const OTTL_DOCS_BASE_URL =
+  'https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/pkg/ottl';
 
 export class PlaygroundConfigPanel extends LitElement {
   static properties = {
@@ -32,6 +38,12 @@ export class PlaygroundConfigPanel extends LitElement {
     hideExamples: {type: Boolean, attribute: 'hide-examples'},
     config: {type: String},
     configDocsURL: {type: String, attribute: 'config-docs-url'},
+    readOnly: {type: Boolean, attribute: 'read-only'},
+    debuggerEnabled: {type: Boolean, attribute: 'debugger-enabled'},
+    debuggingInfo: {type: Object, attribute: 'debugging-info'},
+    ottlEditorConfig: {type: Object, attribute: 'ottl-editor-config'},
+
+    _debuggingLine: {state: true, type: Number},
     _editor: {state: true},
   };
 
@@ -39,7 +51,19 @@ export class PlaygroundConfigPanel extends LitElement {
     super();
     this.hideExamples = false;
     this.examples = [];
+    this.debuggerEnabled = true;
     this.configDocsURL = '';
+    this._debuggingLineOffset = null;
+    this._breakpointState = null;
+    this._editorReadOnlyCompartment = new Compartment();
+    this._editorBreakpointGutterCompartment = new Compartment();
+    this._editorLanguageCompartment = new Compartment();
+
+    this.debuggingInfo = {
+      debugging: false,
+      lines: [],
+      lineResultIndex: {},
+    };
   }
 
   static styles = codePanelsStyles;
@@ -66,6 +90,27 @@ export class PlaygroundConfigPanel extends LitElement {
       // Reset the selected example
       this.shadowRoot.querySelector('#example-input').value = '';
     }
+
+    if (changedProperties.has('debuggerEnabled')) {
+      this._updateBreakpointGutterVisibility();
+    }
+
+    if (changedProperties.has('debuggingInfo')) {
+      this._updateActiveDebugging();
+    }
+
+    if (changedProperties.has('_debuggingLine')) {
+      this._refreshHighlightedDebuggingLine();
+    }
+
+    if (changedProperties.has('ottlEditorConfig')) {
+      this._editor?.dispatch({
+        effects: this._editorLanguageCompartment.reconfigure(
+          this._ottlLanguage()
+        ),
+      });
+    }
+
     super.updated(changedProperties);
   }
 
@@ -91,9 +136,12 @@ export class PlaygroundConfigPanel extends LitElement {
                     id="example-input"
                     @change="${this._handleExampleChanged}"
                     title="Select an example"
-                    style="max-width: 250px"
+                    style="max-width:250px"
+                    ?disabled="${this.debuggingInfo?.debugging === true}"
                   >
-                    <option selected disabled value="">Example</option>
+                    <option selected disabled value="">
+                      Example ${'\u00A0'.repeat(45)}
+                    </option>
                     ${this.examples &&
                     repeat(
                       this.examples,
@@ -109,11 +157,137 @@ export class PlaygroundConfigPanel extends LitElement {
             <slot name="custom-components"></slot>
           </div>
         </div>
+        ${this.debuggingInfo?.debugging
+          ? html`
+              <div class="debugger-controls">
+                <button
+                  @click="${this._stopDebuggingClick}"
+                  title="Stop (&#8679;+F2)"
+                >
+                  <!-- prettier-ignore -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"><path fill="darkred" d="M240-240v-480h480v480H240Z"/></svg>
+                </button>
+                <button
+                  title="${this._hasNextDebuggingLine()
+                    ? 'Resume'
+                    : 'Rerun'} (&#8679;+F9)"
+                  @click="${this._resumeDebuggingClick}"
+                >
+                  ${this._hasNextDebuggingLine()
+                    ? html`
+                        <!-- prettier-ignore -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"><path fill="green" d="M240-240v-480h60v480h-60Zm174 0 385-240-385-240v480Z"/></svg>
+                      `
+                    : html`
+                        <!-- prettier-ignore -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"><path d="M451-122q-123-10-207-101t-84-216q0-77 35.5-145T295-695l43 43q-56 33-87 90.5T220-439q0 100 66 173t165 84v60Zm60 0v-60q100-12 165-84.5T741-439q0-109-75.5-184.5T481-699h-20l60 60-43 43-133-133 133-133 43 43-60 60h20q134 0 227 93.5T801-439q0 125-83.5 216T511-122Z"/></svg>
+                      `}
+                </button>
+                <button
+                  title="Step over (&#8679;+F8)"
+                  @click="${this._nextDebugLineClick}"
+                  ?disabled="${this._debuggingLineOffset ===
+                  this.debuggingInfo?.lines?.length}"
+                >
+                  <!-- prettier-ignore -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"><path d="M479.88-80Q434-80 402-112.12q-32-32.12-32-78T402.12-268q32.12-32 78-32T558-267.88q32 32.12 32 78T557.88-112q-32.12 32-78 32Zm.12-330L294-596l42-42 114 113v-354h60v354l113-113 43 42-186 186Z"/></svg>
+                </button>
+                <button
+                  title="Step back (&#8679;+F7)"
+                  @click="${this._previousDebugLineClick}"
+                  ?disabled="${!this._debuggingLineOffset}"
+                >
+                  <!-- prettier-ignore -->
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 -960 960 960"><path d="M479.88-80Q434-80 402-112.12q-32-32.12-32-78T402.12-268q32.12-32 78-32T558-267.88q32 32.12 32 78T557.88-112q-32.12 32-78 32ZM450-410v-354L336-651l-42-42 186-186 186 186-43 42-113-113v354h-60Z"/></svg>
+                </button>
+              </div>
+            `
+          : nothing}
         <div class="code-editor-container">
           <div class="wrapper" id="config-input"></div>
         </div>
       </div>
     `;
+  }
+
+  hasBreakpoints() {
+    if (
+      !this._editor ||
+      !this._editor.state.doc.length ||
+      !this._breakpointState
+    ) {
+      return false;
+    }
+
+    let state = this._editor.state.field(this._breakpointState, false);
+    if (!state) return false;
+
+    let hasBreakpoints = false;
+    for (let i = 1; i <= this._editor.state.doc.lines; i++) {
+      let line = this._editor.state.doc.line(i);
+      state.between(line.from, line.from, () => {
+        hasBreakpoints = true;
+      });
+      if (hasBreakpoints) break;
+    }
+    return hasBreakpoints;
+  }
+
+  _updateBreakpointGutterVisibility() {
+    this._editor?.dispatch({
+      effects: this._editorBreakpointGutterCompartment.reconfigure(
+        this.debuggerEnabled ? this._breakpointGutter : []
+      ),
+    });
+  }
+
+  _updateActiveDebugging() {
+    this._debuggingLineOffset = this.debuggingInfo?.lines?.length;
+    this._debuggingLine = null;
+
+    let debugging = this.debuggingInfo?.debugging === true;
+    if (debugging) {
+      this._editor.dispatch({
+        effects: this._editorReadOnlyCompartment.reconfigure(
+          EditorState.readOnly.of(true)
+        ),
+      });
+      this.updateComplete.then(() => {
+        this._resumeDebuggingClick();
+      });
+    } else {
+      if (this._editor?.state.doc.length > 0) {
+        this._editor.dispatch({selection: {anchor: 1}, scrollIntoView: true});
+      }
+    }
+  }
+
+  _refreshHighlightedDebuggingLine() {
+    if (this.debuggingInfo) {
+      let anchor = null;
+      if (this._debuggingLine === null || this._debuggingLine === undefined) {
+        anchor = this._editor.state.selection?.main?.from || 0;
+      } else if (
+        this._debuggingLine > 0 &&
+        this._editor.state.doc.lines >= this._debuggingLine
+      ) {
+        let line = this._editor.state.doc.line(this._debuggingLine);
+        anchor = line.from;
+      }
+      if (anchor !== null) {
+        this._editor.dispatch({
+          selection: {anchor: anchor},
+          scrollIntoView: true,
+        });
+      }
+    }
+  }
+
+  _hasNextDebuggingLine() {
+    return (
+      this._debuggingLineOffset !== this.debuggingInfo?.lines?.length &&
+      this._debuggingLine !== null
+    );
   }
 
   _handleExampleChanged(event) {
@@ -133,6 +307,128 @@ export class PlaygroundConfigPanel extends LitElement {
     );
   }
 
+  _resumeDebuggingClick() {
+    let state = this._editor.state.field(this._breakpointState);
+    let breakpoints = {};
+    for (let i = 1; i <= this._editor.state.doc.lines; i++) {
+      let line = this._editor.state.doc.line(i);
+      state.between(line.from, line.from, () => {
+        breakpoints[i] = true;
+      });
+    }
+
+    if (Object.keys(breakpoints).length > 0) {
+      for (let i = 0; i < this.debuggingInfo?.lines?.length; i++) {
+        let line = this.debuggingInfo.lines[i];
+        if (
+          breakpoints[line] === true &&
+          (this._debuggingLine == null || line > this._debuggingLine)
+        ) {
+          this._debuggingLine = line;
+          this._debuggingLineOffset = i;
+          this._notifyDebuggingLineChange(
+            this.debuggingInfo.lines[i - 1] || -1
+          );
+          return;
+        }
+      }
+    }
+
+    this._resumeDebugging();
+  }
+
+  _resumeDebugging() {
+    this._debuggingLineOffset = this.debuggingInfo?.lines?.length;
+    this._debuggingLine = null;
+
+    // Move to the end of the document
+    let from = this._editor.state.doc.line(this._editor.state.doc.lines).from;
+    this._editor.dispatch({
+      selection: {anchor: from},
+      scrollIntoView: true,
+    });
+
+    this._notifyDebuggingLineChange(
+      this.debuggingInfo?.lines?.[this._debuggingLineOffset - 1]
+    );
+
+    this._stopDebuggingClick();
+  }
+
+  _nextDebugLineClick() {
+    if (
+      this._debuggingLineOffset === null ||
+      this._debuggingLineOffset === undefined
+    ) {
+      this._debuggingLineOffset = 0;
+      this._debuggingLine = this.debuggingInfo?.lines?.[0];
+      return;
+    }
+
+    let nextIndex = this._debuggingLineOffset + 1;
+    if (nextIndex > this.debuggingInfo?.lines?.length) {
+      return;
+    }
+
+    this._debuggingLineOffset = nextIndex;
+    if (nextIndex < this.debuggingInfo?.lines?.length) {
+      this._debuggingLine = this.debuggingInfo?.lines?.[nextIndex];
+    } else {
+      this._debuggingLine = null;
+      this._editor.dispatch({
+        selection: {
+          anchor: this._editor.state.doc.line(
+            this.debuggingInfo?.lines?.[nextIndex - 1]
+          ).from,
+        },
+        scrollIntoView: true,
+      });
+    }
+
+    this._notifyDebuggingLineChange(
+      this.debuggingInfo?.lines?.[this._debuggingLineOffset - 1]
+    );
+  }
+
+  _previousDebugLineClick() {
+    if (this._debuggingLineOffset === null || this._debuggingLineOffset <= 0) {
+      return;
+    }
+
+    this._debuggingLineOffset--;
+    this._debuggingLine =
+      this.debuggingInfo?.lines?.[this._debuggingLineOffset];
+    let beforePrevLine =
+      this._debuggingLineOffset === 0
+        ? -1
+        : this.debuggingInfo?.lines?.[this._debuggingLineOffset - 1];
+
+    this._notifyDebuggingLineChange(beforePrevLine);
+  }
+
+  _stopDebuggingClick() {
+    this.debuggingInfo.debugging = false;
+    this._debuggingLine = null;
+    this._debuggingLineOffset = null;
+
+    let readOnly = this.readOnly === true;
+    if (this._editor?.state?.readOnly !== readOnly) {
+      this._editor.dispatch({
+        effects: this._editorReadOnlyCompartment.reconfigure(
+          EditorState.readOnly.of(readOnly)
+        ),
+      });
+    }
+
+    this.dispatchEvent(
+      new CustomEvent('debugging-stop-requested', {
+        detail: {},
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
   _notifyConfigChange(value) {
     this.dispatchEvent(
       new CustomEvent('config-changed', {
@@ -143,7 +439,59 @@ export class PlaygroundConfigPanel extends LitElement {
     );
   }
 
+  _notifyDebuggingLineChange(value) {
+    this.dispatchEvent(
+      new CustomEvent('debugging-line-changed', {
+        detail: {value: value},
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  _ottlLanguageTokenClick(token) {
+    // It currently only supports standard paths, converters, and editors.
+    // All links are based on the standard OTTL docs, not component-specific docs.
+    let link = OTTL_DOCS_BASE_URL;
+    let lowerCaseText = token.text.toLowerCase();
+    switch (token.name) {
+      case 'Path':
+        link += `/contexts/ottl${lowerCaseText}#paths`;
+        break;
+      case 'Converter':
+      case 'Editor':
+        link += `/ottlfuncs#${lowerCaseText}`;
+        break;
+    }
+    window.open(link, '_blank', 'noopener,noreferrer');
+  }
+
+  _ottlLanguage() {
+    return yamlWithOTTL(this.ottlEditorConfig?.syntaxHighlightPatterns);
+  }
+
   _initCodeEditor() {
+    const debuggerApi = {
+      getDebuggerEnabled: () => this.debuggerEnabled,
+      getDebuggingLine: () => this._debuggingLine,
+      isDebugging: () => this.debuggingInfo?.debugging === true,
+      onStop: () => this._stopDebuggingClick(),
+      onResume: () => this._resumeDebuggingClick(),
+      onNextLine: () => this._nextDebugLineClick(),
+      onPreviousLine: () => this._previousDebugLineClick(),
+    };
+    const {
+      breakpointState,
+      breakpointGutter,
+      debuggingLineExt,
+      debuggerKeymap,
+    } = configPanelDebuggerExtension(debuggerApi);
+
+    this._breakpointState = breakpointState;
+    this._breakpointGutter = breakpointGutter;
+
+    const readOnly =
+      this.readOnly === true || this.debuggingInfo?.debugging === true;
     this._editor = new EditorView({
       extensions: [
         basicSetup,
@@ -151,10 +499,15 @@ export class PlaygroundConfigPanel extends LitElement {
           keymap.of([
             indentWithTab,
             {key: 'Enter', run: insertNewlineAndIndent, shift: () => true},
+            ...debuggerKeymap,
           ])
         ),
         EditorView.lineWrapping,
-        yaml(),
+        this._editorLanguageCompartment.of(this._ottlLanguage()),
+        ottlClickableHoverExtension(this._ottlLanguageTokenClick),
+        this._editorBreakpointGutterCompartment.of(this._breakpointGutter),
+        this._editorReadOnlyCompartment.of(EditorState.readOnly.of(readOnly)),
+        debuggingLineExt,
         EditorView.updateListener.of((v) => {
           if (v.docChanged) {
             this._notifyConfigChange(this.config);

@@ -8,6 +8,12 @@
             "value": {
               "stringValue": "my.service"
             }
+          },
+          {
+            "key": "timestamp",
+            "value": {
+              "stringValue": "2018-12-01T16:17:18Z"
+            }
           }
         ]
       },
@@ -46,6 +52,19 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "asDouble": 2,
+                    "startTimeUnixNano": "1544712660300000000",
+                    "timeUnixNano": "1544712660300000000",
+                    "attributes": [
+                      {
+                        "key": "another.counter.attr",
+                        "value": {
+                          "stringValue": "another value"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -81,11 +100,11 @@
                   {
                     "startTimeUnixNano": "1544712660300000000",
                     "timeUnixNano": "1544712660300000000",
-                    "count": 2,
+                    "count": "2",
                     "sum": 2,
                     "bucketCounts": [
-                      1,
-                      1
+                      "1",
+                      "1"
                     ],
                     "explicitBounds": [
                       1

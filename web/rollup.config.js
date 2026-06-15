@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import {terser} from 'rollup-plugin-terser';
+import {lezer} from "@lezer/generator/rollup"
 import * as path from 'path';
 
 // `npm run build` -> `production` is true
@@ -21,6 +22,7 @@ export default {
   plugins: [
     resolve(), // tells Rollup how to find node_modules
     commonjs(), // converts to ES modules
+    lezer(),
     production && terser(), // minify, but only in production
   ],
 };
