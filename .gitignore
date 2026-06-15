@@ -1,0 +1,18 @@
+# Dependencies
+web/node_modules/
+
+# Build outputs
+web/public/bundle.js
+web/public/bundle.js.map
+web/public/wasm/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.iml
+
+# Local Claude settings
+.claude/
+
+# Go build output
+server
