@@ -17,48 +17,37 @@
           "profiles": [
             {
               "sampleType": {
-                "aggregationTemporality": 1
+                "typeStrindex": 1,
+                "unitStrindex": 2
               },
-              "sample": [
+              "samples": [
                 {
                   "stackIndex": 1,
                   "values": [
                     "4"
                   ],
                   "attributeIndices": [
-                    0
+                    1
                   ]
-                }
-              ],
-              "timeUnixNano": "1581452772000000321",
-              "durationNano": "1581452773000000789",
-              "periodType": {
-                "aggregationTemporality": 1
-              },
-              "profileId": "0102030405060708090a0b0c0d0e0f10",
-              "droppedAttributesCount": 1
-            },
-            {
-              "sampleType": {
-                "aggregationTemporality": 1
-              },
-              "sample": [
+                },
                 {
-                  "stackIndex": 1,
+                  "stackIndex": 2,
                   "values": [
                     "9"
                   ],
                   "attributeIndices": [
-                    0
+                    1
                   ]
                 }
               ],
               "timeUnixNano": "1581452772000000321",
               "durationNano": "1581452773000000789",
               "periodType": {
-                "aggregationTemporality": 1
+                "typeStrindex": 1,
+                "unitStrindex": 2
               },
-              "profileId": "0202030405060708090a0b0c0d0e0f10"
+              "profileId": "0102030405060708090a0b0c0d0e0f10",
+              "droppedAttributesCount": 1
             }
           ]
         }
@@ -66,39 +55,89 @@
     }
   ],
   "dictionary": {
+    "mappingTable": [
+      {}
+    ],
     "locationTable": [
+      {},
       {
-        "address": "1"
+        "lines": [
+          {
+            "functionIndex": 1
+          }
+        ]
       },
       {
-        "address": "2"
+        "lines": [
+          {
+            "functionIndex": 2
+          }
+        ]
+      },
+      {
+        "lines": [
+          {
+            "functionIndex": 3
+          }
+        ]
+      },
+      {
+        "lines": [
+          {
+            "functionIndex": 4
+          }
+        ]
       }
+    ],
+    "functionTable": [
+      {},
+      {
+        "nameStrindex": 3
+      },
+      {
+        "nameStrindex": 4
+      },
+      {
+        "nameStrindex": 5
+      },
+      {
+        "nameStrindex": 6
+      }
+    ],
+    "linkTable": [
+      {}
     ],
     "stringTable": [
       "",
+      "cpu",
+      "nanoseconds",
+      "main",
+      "foo",
+      "bar",
+      "bazinga",
       "key"
     ],
     "attributeTable": [
+      {},
       {
-        "keyStrindex": 1,
-        "value": {
-          "stringValue": "value"
-        }
-      },
-      {
+        "keyStrindex": 7,
         "value": {
           "stringValue": "value"
         }
       }
     ],
     "stackTable": [
+      {},
       {
         "locationIndices": [
-          0
+          3,
+          2,
+          1
         ]
       },
       {
         "locationIndices": [
+          4,
           1
         ]
       }
