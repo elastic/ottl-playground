@@ -23,6 +23,8 @@ export const DEFAULT_PAYLOADS = {
     '{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeSpans":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"spans":[{"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","parentSpanId":"eee19b7ec3c1b173","name":"I\'m a server span","startTimeUnixNano":"1544712660000000000","endTimeUnixNano":"1544712661000000000","kind":2,"attributes":[{"key":"my.span.attr","value":{"stringValue":"some value"}}],"status":{}},{"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b173","parentSpanId":"eee19b7ec3c1b173","name":"Me too","startTimeUnixNano":"1544712660000000000","endTimeUnixNano":"1544712661000000000","kind":1,"attributes":[{"key":"my.span.attr","value":{"stringValue":"some value"}}],"status":{}}]}]}]}',
   metrics:
     '{"resourceMetrics":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}},{"key":"timestamp","value":{"stringValue":"2018-12-01T16:17:18Z"}}]},"scopeMetrics":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"metrics":[{"name":"my.counter","unit":"1","description":"I am a Counter","sum":{"aggregationTemporality":1,"isMonotonic":true,"dataPoints":[{"asDouble":5,"startTimeUnixNano":"1544712660300000000","timeUnixNano":"1544712660300000000","attributes":[{"key":"my.counter.attr","value":{"stringValue":"some value"}}]},{"asDouble":2,"startTimeUnixNano":"1544712660300000000","timeUnixNano":"1544712660300000000","attributes":[{"key":"another.counter.attr","value":{"stringValue":"another value"}}]}]}},{"name":"my.gauge","unit":"1","description":"I am a Gauge","gauge":{"dataPoints":[{"asDouble":10,"timeUnixNano":"1544712660300000000","attributes":[{"key":"my.gauge.attr","value":{"stringValue":"some value"}}]}]}},{"name":"my.histogram","unit":"1","description":"I am a Histogram","histogram":{"aggregationTemporality":1,"dataPoints":[{"startTimeUnixNano":"1544712660300000000","timeUnixNano":"1544712660300000000","count":"2","sum":2,"bucketCounts":["1","1"],"explicitBounds":[1],"min":0,"max":2,"attributes":[{"key":"my.histogram.attr","value":{"stringValue":"some value"}}]}]}}]}]}]}',
+  profiles:
+    '{"resourceProfiles":[{"resource":{"attributes":[{"key":"resource-attr","value":{"stringValue":"resource-attr-val-1"}}]},"scopeProfiles":[{"scope":{},"profiles":[{"sampleType":{"typeStrindex":1,"unitStrindex":2},"samples":[{"stackIndex":1,"values":["4"],"attributeIndices":[1]},{"stackIndex":2,"values":["9"],"attributeIndices":[1]}],"timeUnixNano":"1581452772000000321","durationNano":"1581452773000000789","periodType":{"typeStrindex":1,"unitStrindex":2},"profileId":"0102030405060708090a0b0c0d0e0f10","droppedAttributesCount":1}]}]}],"dictionary":{"mappingTable":[{}],"locationTable":[{},{"lines":[{"functionIndex":1}]},{"lines":[{"functionIndex":2}]},{"lines":[{"functionIndex":3}]},{"lines":[{"functionIndex":4}]}],"functionTable":[{},{"nameStrindex":3},{"nameStrindex":4},{"nameStrindex":5},{"nameStrindex":6}],"linkTable":[{}],"stringTable":["","cpu","nanoseconds","main","foo","bar","bazinga","key"],"attributeTable":[{},{"keyStrindex":7,"value":{"stringValue":"value"}}],"stackTable":[{},{"locationIndices":[3,2,1]},{"locationIndices":[4,1]}]}}',
 };
 
 export const DEFAULT_PAYLOAD_EXAMPLES = [
@@ -40,5 +42,10 @@ export const DEFAULT_PAYLOAD_EXAMPLES = [
     name: 'Metrics',
     signal: 'metrics',
     value: DEFAULT_PAYLOADS.metrics,
+  },
+  {
+    name: 'Profiles',
+    signal: 'profiles',
+    value: DEFAULT_PAYLOADS.profiles,
   },
 ];
