@@ -123,6 +123,17 @@ var transformProcessorConfigExamples = []ConfigExample{
 			`    - copy_metric(name="my.second.histogram") where metric.name == "my.histogram"` + "\n" +
 			`    - aggregate_on_attributes("sum", []) where metric.name == "my.second.histogram"`,
 	},
+	{
+		Name:   "Lambda functions: Filter and MapKeys",
+		Signal: "traces",
+		Config: "transform:\n" +
+			"  trace_statements:\n" +
+			"    # Keep only http.* span attributes\n" +
+			`    - set(span.attributes, Filter(span.attributes, (k, _) => HasPrefix(k, "http.")))` + "\n" +
+			"    # Add \"app.\" prefix to all resource attribute keys\n" +
+			`    - set(resource.attributes, MapKeys(resource.attributes, (k, _) => Format("app.%s", [k])))`,
+		Payload: `{"resourceSpans":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}},{"key":"host.name","value":{"stringValue":"web-01"}}]},"scopeSpans":[{"scope":{"name":"my.library","version":"1.0.0"},"spans":[{"traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","parentSpanId":"eee19b7ec3c1b173","name":"HTTP GET /api/users","startTimeUnixNano":"1544712660000000000","endTimeUnixNano":"1544712661000000000","kind":2,"attributes":[{"key":"http.method","value":{"stringValue":"GET"}},{"key":"http.url","value":{"stringValue":"/api/users"}},{"key":"http.status_code","value":{"intValue":"200"}},{"key":"db.system","value":{"stringValue":"postgresql"}},{"key":"internal.retry","value":{"boolValue":false}}],"status":{}}]}]}]}`,
+	},
 }
 
 var transformProcessorSyntaxHighlightPatterns = []metadataOption{
