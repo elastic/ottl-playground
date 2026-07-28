@@ -158,7 +158,8 @@ func Test_TransformProcessorExecutor_ExecuteProfiles(t *testing.T) {
 	for _, rp := range outputProfiles.ResourceProfiles().All() {
 		for _, sp := range rp.ScopeProfiles().All() {
 			for _, pr := range sp.Profiles().All() {
-				attrs := pprofile.FromAttributeIndices(outputProfiles.Dictionary().AttributeTable(), pr, outputProfiles.Dictionary())
+				attrs, err := pprofile.FromAttributeIndices(outputProfiles.Dictionary().AttributeTable(), pr, outputProfiles.Dictionary())
+				require.NoError(t, err)
 				val, ok := attrs.Get("profile_statements")
 				if assert.True(t, ok) && assert.Equal(t, "profile_value", val.Str()) {
 					count++
