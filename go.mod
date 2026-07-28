@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/go-viper/mapstructure/v2 v2.5.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.146.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.146.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.146.0
 	github.com/stretchr/testify v1.11.1
@@ -13,6 +14,7 @@ require (
 	go.opentelemetry.io/collector/confmap/xconfmap v0.146.1
 	go.opentelemetry.io/collector/consumer v1.52.0
 	go.opentelemetry.io/collector/consumer/xconsumer v0.146.1
+	go.opentelemetry.io/collector/featuregate v1.52.0
 	go.opentelemetry.io/collector/pdata v1.52.0
 	go.opentelemetry.io/collector/pdata/pprofile v0.146.1
 	go.opentelemetry.io/collector/processor v1.52.0
@@ -63,7 +65,7 @@ require (
 	github.com/ua-parser/uap-go v0.0.0-20250326155420-f7f5a2f9f5bc // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/collector/featuregate v1.52.0 // indirect
+	go.opentelemetry.io/collector/client v1.52.0 // indirect
 	go.opentelemetry.io/collector/internal/componentalias v0.146.1 // indirect
 	go.opentelemetry.io/collector/pipeline v1.52.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.146.1 // indirect

@@ -24,5 +24,6 @@ func Executors() []Executor {
 	return []Executor{
 		NewTransformProcessorExecutor(),
 		NewFilterProcessorExecutor(),
+		NewAttributesProcessorExecutor(),
 	}
 }

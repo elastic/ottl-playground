@@ -1,0 +1,17 @@
+actions:
+  - key: my.gauge.attr
+    action: delete
+  - key: upsert.attr
+    value: true
+    action: upsert
+  - key: insert.attr
+    value: 2245
+    action: insert
+  - key: account_email
+    action: hash
+  - key: int.attribute
+    action: convert
+    converted_type: int
+  - key: my.span.attr
+    from_attribute: name
+    action: update
