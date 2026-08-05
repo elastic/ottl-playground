@@ -26,7 +26,6 @@ import (
 	"github.com/go-viper/mapstructure/v2"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/confmap"
-	"go.opentelemetry.io/collector/confmap/xconfmap"
 	"gopkg.in/yaml.v3"
 )
 
@@ -108,7 +107,7 @@ func unmarshalValidConfig[C any](cfg *confmap.Conf, defaultConfig C) error {
 		return err
 	}
 
-	validator, ok := any(defaultConfig).(xconfmap.Validator)
+	validator, ok := any(defaultConfig).(interface{ Validate() error })
 	if ok {
 		return validator.Validate()
 	}
