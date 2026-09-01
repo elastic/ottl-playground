@@ -17,14 +17,14 @@
  * under the License.
  */
 
-import {css, html, LitElement} from 'lit-element';
+import {css, html, LitElement, nothing} from 'lit';
+import {repeat} from 'lit/directives/repeat.js';
 import {codePanelsStyles} from './styles';
 import {basicSetup, EditorView} from 'codemirror';
 import {Compartment, EditorState, Prec} from '@codemirror/state';
 import {keymap} from '@codemirror/view';
 import {indentWithTab, insertNewlineAndIndent} from '@codemirror/commands';
-import {nothing} from 'lit';
-import {repeat} from 'lit/directives/repeat.js';
+import {yaml} from '@codemirror/lang-yaml';
 import {yamlWithOTTL} from '../ottl/language';
 import {ottlClickableHoverExtension} from '../ottl/extensions';
 import {configPanelDebuggerExtension} from './config-panel-debugger.js';
@@ -66,37 +66,7 @@ export class PlaygroundConfigPanel extends LitElement {
     };
   }
 
-  static get styles() {
-    let styles = css`
-      .debugger-controls {
-        gap: 1px !important;
-        display: inline-flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding: 5px 8px 5px 5px;
-        border-left: gray 4px solid !important;
-        border-bottom: #eee 1px solid;
-      }
-
-      .debugger-controls button {
-        font-size: 13px;
-        min-height: 25px;
-        max-height: 25px;
-        max-width: 32px;
-        cursor: pointer;
-        border: 2px;
-        border-radius: 7px;
-        display: flex;
-        align-items: center;
-      }
-
-      .debugger-controls button:hover:enabled {
-        background-color: #dedede;
-      }
-    `;
-
-    return [...codePanelsStyles, styles];
-  }
+  static styles = codePanelsStyles;
 
   get config() {
     return this._editor?.state.doc.toString() ?? '';

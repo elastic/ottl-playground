@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {css} from 'lit-element';
+import {css} from 'lit';
 import {globalStyles} from '../styles';
 
 const playgroundStyle = css`

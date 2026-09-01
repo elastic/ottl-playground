@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {css, html, LitElement} from 'lit-element';
+import {css, html, LitElement} from 'lit';
 import {globalStyles} from '../../styles';
 
 export class PlaygroundCopyLinkButton extends LitElement {
@@ -33,11 +33,10 @@ export class PlaygroundCopyLinkButton extends LitElement {
     this.loading = false;
   }
 
-  static get styles() {
-    return [
-      globalStyles,
-      css`
-        .link-button {
+  static styles = [
+    globalStyles,
+    css`
+      .link-button {
           background-color: #e8e7e7;
           border: 1px solid #dcdbdb;
           color: black;
@@ -66,7 +65,6 @@ export class PlaygroundCopyLinkButton extends LitElement {
         }
       `,
     ];
-  }
 
   render() {
     return html`

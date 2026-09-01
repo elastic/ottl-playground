@@ -17,10 +17,9 @@
  * under the License.
  */
 
-import {css, html, LitElement} from 'lit-element';
-import {globalStyles} from '../../styles.js';
+import {css, html, LitElement, nothing} from 'lit';
 import {repeat} from 'lit/directives/repeat.js';
-import {nothing} from 'lit';
+import {globalStyles} from '../../styles.js';
 import './copy-link-button';
 
 export class PlaygroundControls extends LitElement {
@@ -52,9 +51,8 @@ export class PlaygroundControls extends LitElement {
     });
   }
 
-  static get styles() {
-    return [
-      css`
+  static styles = [
+    css`
         .playground-controls {
           overflow: hidden;
           width: 100%;
@@ -113,7 +111,6 @@ export class PlaygroundControls extends LitElement {
       `,
       globalStyles,
     ];
-  }
 
   render() {
     return html`

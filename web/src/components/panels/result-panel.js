@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {html, LitElement} from 'lit-element';
+import {html, LitElement, nothing} from 'lit';
 import * as htmlFormatter from 'jsondiffpatch/formatters/html';
 import {basicSetup, EditorView} from 'codemirror';
 import {json} from '@codemirror/lang-json';
@@ -64,9 +64,7 @@ export class PlaygroundResultPanel extends LitElement {
     this._updateResultViewSelect();
   }
 
-  static get styles() {
-    return resultPanelStyles;
-  }
+  static styles = resultPanelStyles;
 
   willUpdate(changedProperties) {
     if (

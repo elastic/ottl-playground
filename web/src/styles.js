@@ -17,7 +17,7 @@
  * under the License.
  */
 
-import {css} from 'lit-element';
+import {css} from 'lit';
 
 export const globalStyles = css`
   input[type='text'],
