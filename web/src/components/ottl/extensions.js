@@ -52,14 +52,10 @@ function findClickableTokenAt(state, pos) {
   const tree = syntaxTree(state);
   let cur = tree.resolveInner(pos, 0);
   while (cur) {
-    if (cur.name === 'Editor') {
-      const first = cur.getChild('Lowercase');
-      if (first) return {from: first.from, to: first.to, name: cur.name};
+    if (cur.name === 'EditorName') {
       return {from: cur.from, to: cur.to, name: cur.name};
     }
-    if (cur.name === 'Converter') {
-      const first = cur.getChild('Uppercase');
-      if (first) return {from: first.from, to: first.to, name: cur.name};
+    if (cur.name === 'ConverterName') {
       return {from: cur.from, to: cur.to, name: cur.name};
     }
     if (cur.name === 'Path') {

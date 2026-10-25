@@ -28,34 +28,45 @@ var filterProcessorConfigExamples = []ConfigExample{
 		Name:   "Drop specific metric and value",
 		Signal: "metrics",
 		Config: "filter: \n" +
-			"  metrics:\n" +
-			"    datapoint:\n" +
-			`      - metric.name == "my.histogram" and count == 2`,
+			"  error_mode: propagate\n" +
+			"  metric_conditions:\n" +
+			`    - metric.name == "my.histogram" and datapoint.count == 2`,
 	},
 	{
 		Name:   "Drop spans",
 		Signal: "traces",
 		Config: "filter: \n" +
-			"  traces:\n" +
-			"    span:\n" +
-			"      - kind == SPAN_KIND_INTERNAL",
+			"  error_mode: propagate\n" +
+			"  trace_conditions:\n" +
+			"    - span.kind == SPAN_KIND_INTERNAL",
 	},
 	{
 		Name:   "Drop data by resource attribute",
 		Signal: "traces",
 		Config: "filter: \n" +
-			"  traces:\n" +
-			"    span:\n" +
-			`      - IsMatch(resource.attributes["service.name"], "my-*")`,
+			"  error_mode: propagate\n" +
+			"  trace_conditions:\n" +
+			`    - IsMatch(resource.attributes["service.name"], "my-*")`,
 	},
 	{
 		Name:   "Drop debug and trace logs",
 		Signal: "logs",
 		Config: "filter: \n" +
-			"  logs:\n" +
-			"    log_record:\n" +
-			"      - severity_number != SEVERITY_NUMBER_UNSPECIFIED and severity_number < SEVERITY_NUMBER_INFO",
+			"  error_mode: propagate\n" +
+			"  log_conditions:\n" +
+			"    - log.severity_number != SEVERITY_NUMBER_UNSPECIFIED and log.severity_number < SEVERITY_NUMBER_INFO",
 		Payload: `{"resourceLogs":[{"resource":{"attributes":[{"key":"service.name","value":{"stringValue":"my.service"}}]},"scopeLogs":[{"scope":{"name":"my.library","version":"1.0.0","attributes":[{"key":"my.scope.attribute","value":{"stringValue":"some scope attribute"}}]},"logRecords":[{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":10,"severityText":"Information","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I'm an INFO log record"}},{"timeUnixNano":"1544712660300000000","observedTimeUnixNano":"1544712660300000000","severityNumber":5,"severityText":"Debug","traceId":"5b8efff798038103d269b633813fc60c","spanId":"eee19b7ec3c1b174","body":{"stringValue":"I'm a DEBUG log record"}}]}]}]}`,
+	},
+	{
+		Name:   "Drop telemetry originating from specific networks",
+		Signal: "traces",
+		Config: "filter: \n" +
+			"  error_mode: propagate\n" +
+			"  trace_conditions:\n" +
+			"    - context: resource\n" +
+			"      conditions:\n" +
+			"        # otelcol.client.addr contains the client's remote address (192.0.2.10 in the playground).\n" +
+			`        - IsInCIDR(otelcol.client.addr, ["192.0.2.10/32", "10.0.0.0/8"])`,
 	},
 }
 

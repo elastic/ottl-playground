@@ -35,6 +35,8 @@ import {
   ottlKeywordTag,
   ottlContextNameTag,
   ottlPathSegmentTag,
+  ottlLambdaParamTag,
+  ottlLambdaParenTag,
 } from './highlight';
 
 const ottlLanguage = LRLanguage.define({
@@ -66,6 +68,8 @@ const ottlHighlightStyle = HighlightStyle.define([
   {tag: ottlFuncTag, color: '#eb4a0f'},
   {tag: ottlContextNameTag, color: '#000'},
   {tag: ottlPathSegmentTag, color: '#59595b'},
+  {tag: ottlLambdaParamTag, color: '#7b3fa0'},
+  {tag: ottlLambdaParenTag, color: '#666'},
 ]);
 
 function buildSegmentsUpFrom(n, input) {

@@ -298,6 +298,14 @@ func generateProcessorsGoGetArgument(version string) (string, error) {
 	}
 
 	var argument strings.Builder
+	coreMods := []string{
+		"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl",
+	}
+	for _, dep := range coreMods {
+		argument.WriteString(fmt.Sprintf("%s@%s", dep, version))
+		argument.WriteString(" ")
+	}
+
 	seem := map[string]bool{}
 	for _, dep := range goModInfo.Require {
 		if dep.Indirect {

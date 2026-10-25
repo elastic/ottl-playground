@@ -23,6 +23,8 @@ export const ottlStringTag = t.special(t.string);
 export const ottlFuncTag = t.special(t.variableName);
 export const ottlContextNameTag = t.special(t.propertyName);
 export const ottlPathSegmentTag = t.special(t.attributeName);
+export const ottlLambdaParamTag = t.special(t.local(t.variableName));
+export const ottlLambdaParenTag = t.special(t.paren);
 export const ottlKeywordTag = t.special(t.keyword);
 
 export const highlight = styleTags({
@@ -37,8 +39,10 @@ export const highlight = styleTags({
 
   EnumSymbol: t.atom,
   'EnumSymbol/Uppercase': t.atom,
-  'Editor/Lowercase': ottlFuncTag,
-  'Converter/Uppercase': ottlFuncTag,
+  'EditorName!': ottlFuncTag,
+  'ConverterName!': ottlFuncTag,
+  // Bare mixed-case name (e.g. while typing "Len" before the "(") is always a converter
+  ConverterId: ottlFuncTag,
   'Path/Lowercase': ottlContextNameTag,
   'PathTail/Lowercase': ottlPathSegmentTag,
 
@@ -46,10 +50,13 @@ export const highlight = styleTags({
   OpAddSub: t.arithmeticOperator,
   OpMultDiv: t.arithmeticOperator,
   Equal: t.definitionOperator,
+  Arrow: t.definitionOperator,
+  'LambdaParams/Lowercase': ottlLambdaParamTag,
   '.': t.derefOperator,
   ',': t.separator,
   ':': t.separator,
   '( )': t.paren,
+  'Lambda/( Lambda/)': ottlLambdaParenTag,
   '[ ]': t.squareBracket,
   '{ }': t.brace,
 

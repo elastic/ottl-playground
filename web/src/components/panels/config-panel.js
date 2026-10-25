@@ -488,8 +488,8 @@ export class PlaygroundConfigPanel extends LitElement {
       case 'Path':
         link += `/contexts/ottl${lowerCaseText}#paths`;
         break;
-      case 'Converter':
-      case 'Editor':
+      case 'ConverterName':
+      case 'EditorName':
         link += `/ottlfuncs#${lowerCaseText}`;
         break;
     }
