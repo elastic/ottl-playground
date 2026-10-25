@@ -22,10 +22,13 @@ package internal
 import (
 	"context"
 	"errors"
+	"net"
 
+	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/consumer/xconsumer"
 	"go.opentelemetry.io/collector/pdata/pprofile"
 	"go.opentelemetry.io/collector/processor/xprocessor"
+	"google.golang.org/grpc/metadata"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
@@ -62,6 +65,7 @@ type processorConsumer[C any] struct {
 	settings          processor.Settings
 	telemetrySettings component.TelemetrySettings
 	observedLogs      *ObservedLogs
+	ctx               context.Context
 }
 
 func newProcessorConsumer[C any](
@@ -93,7 +97,36 @@ func newProcessorConsumer[C any](
 		telemetrySettings: telemetrySettings,
 		settings:          settings,
 		observedLogs:      observedLogs,
+		ctx:               newContextWithMetadata(),
 	}
+}
+
+func newContextWithMetadata() context.Context {
+	ctx := client.NewContext(context.Background(), client.Info{
+		Addr: &net.IPAddr{
+			IP: net.ParseIP("192.0.2.10"),
+		},
+		Metadata: client.NewMetadata(map[string][]string{
+			"host":            {"collector.example.com:4318"},
+			"content-type":    {"application/x-protobuf"},
+			"user-agent":      {"prototype-client/1.0.0"},
+			"authorization":   {"Bearer dev-token"},
+			"x-tenant-id":     {"tenant-123"},
+			"x-api-key":       {"dev-api-key"},
+			"accept-encoding": {"gzip", "identity"},
+		}),
+	})
+
+	ctx = metadata.NewIncomingContext(ctx, metadata.New(map[string]string{
+		":authority":    "collector.example.com:4317",
+		"content-type":  "application/grpc",
+		"user-agent":    "prototype-client/1.0.0",
+		"authorization": "Bearer dev-token",
+		"x-tenant-id":   "tenant-123",
+		"x-api-key":     "dev-api-key",
+	}))
+
+	return ctx
 }
 
 func (p processorConsumer[C]) ConsumeLogs(config *C, input plog.Logs) (plog.Logs, error) {
@@ -103,17 +136,17 @@ func (p processorConsumer[C]) ConsumeLogs(config *C, input plog.Logs) (plog.Logs
 		return nil
 	})
 
-	logsProcessor, err := p.factory.CreateLogs(context.Background(), p.settings, config, logsConsumer)
+	logsProcessor, err := p.factory.CreateLogs(p.ctx, p.settings, config, logsConsumer)
 	if err != nil {
 		return plog.Logs{}, err
 	}
 
-	err = logsProcessor.Start(context.Background(), componenttest.NewNopHost())
+	err = logsProcessor.Start(p.ctx, componenttest.NewNopHost())
 	if err != nil {
 		return plog.Logs{}, err
 	}
 
-	err = logsProcessor.ConsumeLogs(context.Background(), input)
+	err = logsProcessor.ConsumeLogs(p.ctx, input)
 	if err != nil {
 		return plog.Logs{}, err
 	}
@@ -128,17 +161,17 @@ func (p processorConsumer[C]) ConsumeMetrics(config *C, input pmetric.Metrics) (
 		return nil
 	})
 
-	metricsProcessor, err := p.factory.CreateMetrics(context.Background(), p.settings, config, metricsConsumer)
+	metricsProcessor, err := p.factory.CreateMetrics(p.ctx, p.settings, config, metricsConsumer)
 	if err != nil {
 		return pmetric.Metrics{}, err
 	}
 
-	err = metricsProcessor.Start(context.Background(), componenttest.NewNopHost())
+	err = metricsProcessor.Start(p.ctx, componenttest.NewNopHost())
 	if err != nil {
 		return pmetric.Metrics{}, err
 	}
 
-	err = metricsProcessor.ConsumeMetrics(context.Background(), input)
+	err = metricsProcessor.ConsumeMetrics(p.ctx, input)
 	if err != nil {
 		return pmetric.Metrics{}, err
 	}
@@ -153,17 +186,17 @@ func (p processorConsumer[C]) ConsumeTraces(config *C, input ptrace.Traces) (ptr
 		return nil
 	})
 
-	tracesProcessor, err := p.factory.CreateTraces(context.Background(), p.settings, config, tracesConsumer)
+	tracesProcessor, err := p.factory.CreateTraces(p.ctx, p.settings, config, tracesConsumer)
 	if err != nil {
 		return ptrace.Traces{}, err
 	}
 
-	err = tracesProcessor.Start(context.Background(), componenttest.NewNopHost())
+	err = tracesProcessor.Start(p.ctx, componenttest.NewNopHost())
 	if err != nil {
 		return ptrace.Traces{}, err
 	}
 
-	err = tracesProcessor.ConsumeTraces(context.Background(), input)
+	err = tracesProcessor.ConsumeTraces(p.ctx, input)
 	if err != nil {
 		return ptrace.Traces{}, err
 	}
@@ -183,17 +216,17 @@ func (p processorConsumer[C]) ConsumeProfiles(config *C, input pprofile.Profiles
 		return nil
 	})
 
-	profilesProcessor, err := factory.CreateProfiles(context.Background(), p.settings, config, profilesConsumer)
+	profilesProcessor, err := factory.CreateProfiles(p.ctx, p.settings, config, profilesConsumer)
 	if err != nil {
 		return pprofile.Profiles{}, err
 	}
 
-	err = profilesProcessor.Start(context.Background(), componenttest.NewNopHost())
+	err = profilesProcessor.Start(p.ctx, componenttest.NewNopHost())
 	if err != nil {
 		return pprofile.Profiles{}, err
 	}
 
-	err = profilesProcessor.ConsumeProfiles(context.Background(), input)
+	err = profilesProcessor.ConsumeProfiles(p.ctx, input)
 	if err != nil {
 		return pprofile.Profiles{}, err
 	}

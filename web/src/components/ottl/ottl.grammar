@@ -56,6 +56,7 @@
   OpAddSub { "+" | "-" }
   OpMultDiv { "*" | "/" }
   Equal { "=" }
+  Arrow { "=>" }
 
   // Punctuation
   "("
@@ -72,12 +73,15 @@
   // Editor and converter names are camelCase / PascalCase:
   //  - Editors:  first char lowercase, then letters/digits/underscore
   //  - Converters: first char uppercase, then letters/digits/underscore
-  Uppercase { $[A-Z] $[A-Za-z0-9_]* }
-  Lowercase { $[a-z] $[A-Za-z0-9_]* }
+  // Enums are ALL_CAPS; any Uppercase-led name with a lowercase letter can only be a converter
+  Uppercase { $[A-Z] $[A-Z0-9_]* }
+  ConverterId { $[A-Z] $[A-Z0-9_]* $[a-z] $[A-Za-z0-9_]* }
+  Lowercase { $[a-z_] $[A-Za-z0-9_]* }
 
   // Resolve overlaps between keywords and identifiers, and between number forms
   @precedence { Nil, Boolean, OpNot, OpOr, OpAnd, Where, Lowercase }
   @precedence { Bytes, Float, Int }
+  @precedence { ConverterId, Uppercase }
 }
 
 @skip { space }
@@ -147,6 +151,7 @@ MathAtom {
 | Int
 | Path
 | Converter
+| ConverterId
 | Bytes
 | String
 | Nil
@@ -175,8 +180,7 @@ PathTail {
 }
 
 PathKeyIndex {
-  String
-| Int
+  MathExpression
 }
 
 List {
@@ -203,22 +207,41 @@ Value {
 | List
 | Path
 | Converter
+| ConverterId
+| Lambda
 }
 
 ////////////////////////////////////
 // Function calls and arguments
 ////////////////////////////////////
 
+EditorName {
+  Lowercase
+}
+
 Editor {
-  Lowercase "(" ArgList? ")"
+  EditorName "(" ArgList? ")"
+}
+
+ConverterName {
+  ConverterId
+| Uppercase
 }
 
 Converter {
-  Uppercase "(" ArgList? ")"
+  ConverterName "(" ArgList? ")"
 }
 
 ArgList {
   Arg ("," Arg)*
+}
+
+Lambda {
+  "(" LambdaParams? ")" Arrow BooleanExpression
+}
+
+LambdaParams {
+  Lowercase ("," Lowercase)*
 }
 
 Arg {

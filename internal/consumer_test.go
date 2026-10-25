@@ -25,10 +25,27 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/client"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+	"google.golang.org/grpc/metadata"
 )
+
+func Test_newContextWithMetadata(t *testing.T) {
+	ctx := newContextWithMetadata()
+
+	info := client.FromContext(ctx)
+	require.NotNil(t, info.Addr)
+	assert.Equal(t, "192.0.2.10", info.Addr.String())
+	assert.Equal(t, []string{"collector.example.com:4318"}, info.Metadata.Get("host"))
+	assert.Equal(t, []string{"gzip", "identity"}, info.Metadata.Get("accept-encoding"))
+
+	grpcMetadata, ok := metadata.FromIncomingContext(ctx)
+	require.True(t, ok)
+	assert.Equal(t, []string{"collector.example.com:4317"}, grpcMetadata.Get(":authority"))
+	assert.Equal(t, []string{"application/grpc"}, grpcMetadata.Get("content-type"))
+}
 
 func Test_newProcessorConsumer(t *testing.T) {
 	factory := transformprocessor.NewFactory()
