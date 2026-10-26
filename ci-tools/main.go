@@ -398,7 +398,7 @@ func getUnregisteredVersions(maxNumOfVersions int) (string, error) {
 
 	var newVersions []string
 	for _, release := range data {
-		version := release["name"].(string)
+		version := release["tag_name"].(string)
 		if _, ok := ignoredVersions[version]; ok {
 			continue
 		}
