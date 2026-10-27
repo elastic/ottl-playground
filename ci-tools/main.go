@@ -298,14 +298,11 @@ func generateProcessorsGoGetArgument(version string) (string, error) {
 	}
 
 	var argument strings.Builder
-	coreMods := []string{
-		"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl",
-	}
-	for _, dep := range coreMods {
-		argument.WriteString(fmt.Sprintf("%s@%s", dep, version))
+	// Force downgrade OTTL for versions prior v1
+	if semver.Compare(version, "v0.164.0") < 0 {
+		argument.WriteString(fmt.Sprintf("github.com/open-telemetry/opentelemetry-collector-contrib/pkg/ottl@%s", version))
 		argument.WriteString(" ")
 	}
-
 	seem := map[string]bool{}
 	for _, dep := range goModInfo.Require {
 		if dep.Indirect {
@@ -392,7 +389,7 @@ func getUnregisteredVersions(maxNumOfVersions int) (string, error) {
 	}
 
 	ignoredVersions := map[string]struct{}{}
-	for _, ignoredVersion := range strings.Split(os.Getenv("IGNORED_WASM_PROCESSORS_VERSIONS"), " ") {
+	for ignoredVersion := range strings.SplitSeq(os.Getenv("IGNORED_WASM_PROCESSORS_VERSIONS"), " ") {
 		ignoredVersions[ignoredVersion] = struct{}{}
 	}
 
